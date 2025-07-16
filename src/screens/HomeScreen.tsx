@@ -9,10 +9,18 @@ export function HomeScreen() {
   const router = useRouter()
 
   return (
-    <Screen preset="fixed" className="flex-1 justify-center items-center p-6">
-      <Text preset="heading">Welcome to Codeword</Text>
+    <Screen
+      preset="fixed"
+      safeAreaEdges={["top", "bottom"]}
+      className="flex-1 justify-center items-center p-6 bg-blue-100"
+    >
+      <Text preset="heading" className="text-center text-2xl font-bold text-red-400">
+        Welcome to Codeword
+      </Text>
       <Spacer size={12} />
-      <Text preset="default">Outwit your friends in the ultimate word game</Text>
+      <Text preset="default" className="text-blue-600">
+        Outwit your friends in the ultimate word game
+      </Text>
       <Spacer size={32} />
       <Button text="Join a Game" onPress={() => router.push("/games")} />
     </Screen>

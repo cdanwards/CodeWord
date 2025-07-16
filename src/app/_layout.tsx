@@ -51,10 +51,10 @@ export default function Root() {
       <ThemeProvider>
         <KeyboardProvider>
           <Tabs>
-            <Tabs.Screen name="index" options={{ href: null }} />
-            <Tabs.Screen name="home" options={{ title: "Home" }} />
-            <Tabs.Screen name="games" options={{ title: "Games" }} />
-            <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+            <Tabs.Screen name="index" options={{ href: null, headerShown: false }} />
+            <Tabs.Screen name="home" options={{ title: "Home", headerShown: false }} />
+            <Tabs.Screen name="games" options={{ title: "Games", headerShown: false }} />
+            <Tabs.Screen name="profile" options={{ title: "Profile", headerShown: false }} />
           </Tabs>
         </KeyboardProvider>
       </ThemeProvider>

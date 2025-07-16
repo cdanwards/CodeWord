@@ -3,11 +3,15 @@ import { View, ViewProps } from "react-native"
 
 interface BoxProps extends ViewProps {
   children?: ReactNode
+  /**
+   * Tailwind CSS classes for styling.
+   */
+  className?: string
 }
 
-export function Box({ children, style, ...rest }: BoxProps) {
+export function Box({ children, style, className, ...rest }: BoxProps) {
   return (
-    <View style={style} {...rest}>
+    <View style={style} className={className} {...rest}>
       {children}
     </View>
   )
