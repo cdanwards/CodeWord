@@ -1,3 +1,4 @@
+import { View, ViewStyle, TextStyle } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
@@ -12,17 +13,43 @@ export function HomeScreen() {
     <Screen
       preset="fixed"
       safeAreaEdges={["top", "bottom"]}
-      className="flex-1 justify-center items-center p-6 bg-blue-100"
+      style={$screen}
+      contentContainerStyle={$contentContainer}
     >
-      <Text preset="heading" className="text-center text-2xl font-bold text-red-400">
-        Welcome to Codeword
-      </Text>
+      <View style={$redBox}>
+        <Text style={$whiteText}>Test Red Background</Text>
+      </View>
       <Spacer size={12} />
-      <Text preset="default" className="text-blue-600">
-        Outwit your friends in the ultimate word game
-      </Text>
+      <Text style={$blueText}>Test Blue Text</Text>
       <Spacer size={32} />
       <Button text="Join a Game" onPress={() => router.push("/games")} />
     </Screen>
   )
+}
+
+const $screen: ViewStyle = {
+  flex: 1,
+}
+
+const $contentContainer: ViewStyle = {
+  justifyContent: "center" as const,
+  alignItems: "center" as const,
+  padding: 24,
+}
+
+const $redBox: ViewStyle = {
+  backgroundColor: "#ef4444",
+  padding: 16,
+  borderRadius: 8,
+}
+
+const $whiteText: TextStyle = {
+  color: "#ffffff",
+  fontSize: 18,
+  fontWeight: "bold" as const,
+}
+
+const $blueText: TextStyle = {
+  color: "#3b82f6",
+  fontSize: 18,
 }

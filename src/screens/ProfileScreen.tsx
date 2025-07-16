@@ -6,8 +6,8 @@ import { Spacer } from "@/components/ui/Spacer"
 
 export function ProfileScreen() {
   return (
-    <Screen preset="fixed" className="flex-1 justify-center items-center p-6">
-      <Box className="w-20 h-20 rounded-full bg-neutral-200 justify-center items-center">
+    <Screen preset="fixed" style={$screen} contentContainerStyle={$contentContainer}>
+      <Box style={$avatarBox}>
         <Text preset="heading">JD</Text>
       </Box>
       <Spacer size={16} />
@@ -16,4 +16,23 @@ export function ProfileScreen() {
       <Button text="Edit Profile" onPress={() => {}} />
     </Screen>
   )
+}
+
+const $screen = {
+  flex: 1,
+}
+
+const $contentContainer = {
+  justifyContent: "center" as const,
+  alignItems: "center" as const,
+  padding: 24,
+}
+
+const $avatarBox = {
+  width: 80,
+  height: 80,
+  borderRadius: 40,
+  backgroundColor: "#e5e5e5",
+  justifyContent: "center" as const,
+  alignItems: "center" as const,
 }
