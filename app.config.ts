@@ -17,6 +17,15 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
 
   return {
     ...config,
+    extra: {
+      // Add your environment variables here
+      supabaseUrl: process.env.SUPABASE_URL || "https://peuvdwygnzjoexsqildc.supabase.co",
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+      databaseUrl:
+        process.env.DATABASE_URL ||
+        "postgresql://postgres:[YOUR-PASSWORD]@db.peuvdwygnzjoexsqildc.supabase.co:5432/postgres",
+      betterAuthSecret: process.env.BETTER_AUTH_SECRET,
+    },
     ios: {
       ...config.ios,
       // This privacyManifests is to get you started.
