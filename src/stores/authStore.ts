@@ -91,10 +91,7 @@ export const useAuthStore = create<AuthState>()(
         setError(null)
 
         try {
-          const { data, error } = await authClient.signIn.email({
-            email: email.trim(),
-            password,
-          })
+          const { data, error } = await authClient.signInWithPassword(email, password)
 
           if (error) {
             setError(error.message || "Login failed")
@@ -102,8 +99,18 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (data?.user) {
-            setUser(data.user)
-            // Better Auth doesn't return session in the same object, we'll handle it separately
+            // Transform Supabase user to our User interface
+            const user: User = {
+              id: data.user.id,
+              email: data.user.email || "",
+              name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "",
+              image: data.user.user_metadata?.avatar_url || null,
+              emailVerified: data.user.email_confirmed_at !== null,
+              createdAt: data.user.created_at,
+              updatedAt: data.user.updated_at || data.user.created_at,
+            }
+
+            setUser(user)
             return { success: true }
           }
 
@@ -125,11 +132,7 @@ export const useAuthStore = create<AuthState>()(
         setError(null)
 
         try {
-          const { data, error } = await authClient.signUp.email({
-            email: email.trim(),
-            password,
-            name: name.trim(),
-          })
+          const { data, error } = await authClient.signUp(email, password)
 
           if (error) {
             setError(error.message || "Signup failed")
@@ -137,7 +140,18 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (data?.user) {
-            setUser(data.user)
+            // Transform Supabase user to our User interface
+            const user: User = {
+              id: data.user.id,
+              email: data.user.email || "",
+              name: name.trim() || data.user.email?.split("@")[0] || "",
+              image: data.user.user_metadata?.avatar_url || null,
+              emailVerified: data.user.email_confirmed_at !== null,
+              createdAt: data.user.created_at,
+              updatedAt: data.user.updated_at || data.user.created_at,
+            }
+
+            setUser(user)
             return { success: true }
           }
 
@@ -176,7 +190,7 @@ export const useAuthStore = create<AuthState>()(
         setLoading(true)
 
         try {
-          const { data, error } = await authClient.getSession()
+          const { session, error } = await authClient.getSession()
 
           if (error) {
             setUser(null)
@@ -184,9 +198,25 @@ export const useAuthStore = create<AuthState>()(
             return
           }
 
-          if (data?.user && data?.session) {
-            setUser(data.user)
-            setSession(data.session)
+          if (session?.user) {
+            // Transform Supabase user to our User interface
+            const user: User = {
+              id: session.user.id,
+              email: session.user.email || "",
+              name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "",
+              image: session.user.user_metadata?.avatar_url || null,
+              emailVerified: session.user.email_confirmed_at !== null,
+              createdAt: session.user.created_at,
+              updatedAt: session.user.updated_at || session.user.created_at,
+            }
+
+            setUser(user)
+            setSession({
+              id: session.access_token,
+              userId: session.user.id,
+              token: session.access_token,
+              expiresAt: new Date(session.expires_at! * 1000),
+            })
             setError(null)
           } else {
             setUser(null)

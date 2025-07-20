@@ -24,7 +24,6 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       databaseUrl:
         process.env.DATABASE_URL ||
         "postgresql://postgres:[YOUR-PASSWORD]@db.peuvdwygnzjoexsqildc.supabase.co:5432/postgres",
-      betterAuthSecret: process.env.BETTER_AUTH_SECRET,
     },
     ios: {
       ...config.ios,

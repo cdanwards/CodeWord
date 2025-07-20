@@ -49,12 +49,6 @@ export const LoginScreen = function LoginScreen() {
     }
   }
 
-  const handleOAuthLogin = async (provider: string) => {
-    // TODO: Implement OAuth login
-    console.log(`Logging in with ${provider}`)
-    Alert.alert("Info", `${provider} login coming soon!`)
-  }
-
   const handleForgotPassword = () => {
     Alert.alert("Forgot Password", "Password reset functionality coming soon!")
   }
@@ -120,30 +114,6 @@ export const LoginScreen = function LoginScreen() {
               style={themed($signInButton)}
               textStyle={themed($signInButtonText)}
               onPress={handleLogin}
-              disabled={isLoading}
-            />
-
-            {/* Divider */}
-            <View style={themed($dividerContainer)}>
-              <View style={themed($dividerLine)} />
-              <Text style={themed($dividerText)} text="or" />
-              <View style={themed($dividerLine)} />
-            </View>
-
-            {/* OAuth Buttons */}
-            <Button
-              text="Continue with Google"
-              style={themed($googleButton)}
-              textStyle={themed($oauthButtonText)}
-              onPress={() => handleOAuthLogin("Google")}
-              disabled={isLoading}
-            />
-
-            <Button
-              text="Continue with GitHub"
-              style={themed($githubButton)}
-              textStyle={themed($oauthButtonText)}
-              onPress={() => handleOAuthLogin("GitHub")}
               disabled={isLoading}
             />
           </View>
@@ -219,48 +189,6 @@ const $signInButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
 const $signInButtonText: ThemedStyle<TextStyle> = () => ({
   fontSize: 16,
   fontWeight: "600",
-})
-
-const $dividerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: spacing.lg,
-})
-
-const $dividerLine: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  flex: 1,
-  height: 1,
-  backgroundColor: colors.border,
-})
-
-const $dividerText: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
-  marginHorizontal: spacing.md,
-  color: colors.text,
-  opacity: 0.5,
-})
-
-const $googleButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  marginBottom: spacing.sm,
-  backgroundColor: colors.background,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $githubButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  marginBottom: spacing.lg,
-  backgroundColor: colors.background,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $oauthButtonText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  fontSize: 16,
-  fontWeight: "500",
 })
 
 const $footerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
