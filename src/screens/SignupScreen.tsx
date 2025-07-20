@@ -65,16 +65,12 @@ export const SignupScreen = function SignupScreen() {
     const result = await signUp(email, password, name)
 
     if (result.success) {
-      Alert.alert(
-        "Success!",
-        "Account created successfully! Please check your email to verify your account.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("login" as any),
-          },
-        ],
-      )
+      Alert.alert("Success!", "Account created successfully! Welcome to Codeword!", [
+        {
+          text: "Get Started",
+          onPress: () => router.replace("/"),
+        },
+      ])
     } else if (result.error) {
       Alert.alert("Error", result.error)
     }

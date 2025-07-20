@@ -29,8 +29,12 @@ export const authClient = {
   },
 
   // Sign up with email and password
-  signUp: async (email: string, password: string) => {
-    return await supabase.auth.signUp({ email, password })
+  signUp: async (email: string, password: string, options?: { data?: any }) => {
+    return await supabase.auth.signUp({
+      email,
+      password,
+      options,
+    })
   },
 
   // Sign out

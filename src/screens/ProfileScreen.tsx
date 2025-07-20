@@ -25,7 +25,8 @@ export function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           await signOut()
-          router.replace("/(auth)/login")
+          // Navigate to index which will handle the redirect based on auth state
+          router.replace("/")
         },
       },
     ])

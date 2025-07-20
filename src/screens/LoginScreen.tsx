@@ -42,8 +42,8 @@ export const LoginScreen = function LoginScreen() {
     const result = await signIn(email, password)
 
     if (result.success) {
-      Alert.alert("Success", "Login successful!")
-      // TODO: Navigate to main app
+      // Navigate to main app - the index.tsx will handle the redirect
+      router.replace("/")
     } else if (result.error) {
       Alert.alert("Error", result.error)
     }

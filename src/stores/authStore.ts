@@ -105,7 +105,7 @@ export const useAuthStore = create<AuthState>()(
               email: data.user.email || "",
               name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "",
               image: data.user.user_metadata?.avatar_url || null,
-              emailVerified: data.user.email_confirmed_at !== null,
+              emailVerified: true, // Email confirmation disabled for now
               createdAt: data.user.created_at,
               updatedAt: data.user.updated_at || data.user.created_at,
             }
@@ -132,7 +132,12 @@ export const useAuthStore = create<AuthState>()(
         setError(null)
 
         try {
-          const { data, error } = await authClient.signUp(email, password)
+          // Sign up with user metadata
+          const { data, error } = await authClient.signUp(email, password, {
+            data: {
+              name: name.trim(),
+            },
+          })
 
           if (error) {
             setError(error.message || "Signup failed")
@@ -146,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
               email: data.user.email || "",
               name: name.trim() || data.user.email?.split("@")[0] || "",
               image: data.user.user_metadata?.avatar_url || null,
-              emailVerified: data.user.email_confirmed_at !== null,
+              emailVerified: true, // Email confirmation disabled for now
               createdAt: data.user.created_at,
               updatedAt: data.user.updated_at || data.user.created_at,
             }
@@ -205,7 +210,7 @@ export const useAuthStore = create<AuthState>()(
               email: session.user.email || "",
               name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "",
               image: session.user.user_metadata?.avatar_url || null,
-              emailVerified: session.user.email_confirmed_at !== null,
+              emailVerified: true, // Email confirmation disabled for now
               createdAt: session.user.created_at,
               updatedAt: session.user.updated_at || session.user.created_at,
             }
