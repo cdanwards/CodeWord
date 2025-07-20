@@ -16,7 +16,7 @@ import { Button } from "@/components/Button"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
-import { authClient } from "@/lib/auth-client"
+import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
 import { $styles } from "@/theme/styles"
 import type { ThemedStyle } from "@/theme/types"
@@ -26,11 +26,11 @@ const logoImage = require("@assets/images/logo.png")
 
 export const SignupScreen = function SignupScreen() {
   const { themed } = useAppTheme()
+  const { signUp, isLoading, clearError } = useAuth()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
 
   const $bottomContainerInsets = useSafeAreaInsetsStyle(["bottom"])
 
@@ -61,54 +61,29 @@ export const SignupScreen = function SignupScreen() {
   const handleSignup = async () => {
     if (!validateForm()) return
 
-    setIsLoading(true)
-    try {
-      const { data, error } = await authClient.signUp.email({
-        email: email.trim(),
-        password,
-        name: name.trim(),
-      })
+    clearError()
+    const result = await signUp(email, password, name)
 
-      if (error) {
-        Alert.alert("Error", error.message || "Signup failed. Please try again.")
-        return
-      }
-
-      if (data) {
-        Alert.alert(
-          "Success!",
-          "Account created successfully! Please check your email to verify your account.",
-          [
-            {
-              text: "OK",
-              onPress: () => router.replace("/(auth)/login"),
-            },
-          ],
-        )
-      }
-    } catch (error) {
-      console.error("Signup error:", error)
-      Alert.alert("Error", "Signup failed. Please try again.")
-    } finally {
-      setIsLoading(false)
+    if (result.success) {
+      Alert.alert(
+        "Success!",
+        "Account created successfully! Please check your email to verify your account.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("login" as any),
+          },
+        ],
+      )
+    } else if (result.error) {
+      Alert.alert("Error", result.error)
     }
   }
 
   const handleOAuthSignup = async (provider: string) => {
-    setIsLoading(true)
-    try {
-      // TODO: Implement OAuth signup
-      console.log(`Signing up with ${provider}`)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      Alert.alert("Success", `${provider} signup successful!`)
-    } catch {
-      Alert.alert("Error", `${provider} signup failed. Please try again.`)
-    } finally {
-      setIsLoading(false)
-    }
+    // TODO: Implement OAuth signup
+    console.log(`Signing up with ${provider}`)
+    Alert.alert("Info", `${provider} signup coming soon!`)
   }
 
   return (

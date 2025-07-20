@@ -16,7 +16,7 @@ import { Button } from "@/components/Button"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
-import { authClient } from "@/lib/auth-client"
+import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
 import { $styles } from "@/theme/styles"
 import type { ThemedStyle } from "@/theme/types"
@@ -26,9 +26,9 @@ const logoImage = require("@assets/images/logo.png")
 
 export const LoginScreen = function LoginScreen() {
   const { themed } = useAppTheme()
+  const { signIn, isLoading, clearError } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
 
   const $bottomContainerInsets = useSafeAreaInsetsStyle(["bottom"])
 
@@ -38,45 +38,21 @@ export const LoginScreen = function LoginScreen() {
       return
     }
 
-    setIsLoading(true)
-    try {
-      const { data, error } = await authClient.signIn.email({
-        email: email.trim(),
-        password,
-      })
+    clearError()
+    const result = await signIn(email, password)
 
-      if (error) {
-        Alert.alert("Error", error.message || "Login failed. Please try again.")
-        return
-      }
-
-      if (data) {
-        Alert.alert("Success", "Login successful!")
-        // TODO: Navigate to main app
-      }
-    } catch (error) {
-      console.error("Login error:", error)
-      Alert.alert("Error", "Login failed. Please try again.")
-    } finally {
-      setIsLoading(false)
+    if (result.success) {
+      Alert.alert("Success", "Login successful!")
+      // TODO: Navigate to main app
+    } else if (result.error) {
+      Alert.alert("Error", result.error)
     }
   }
 
   const handleOAuthLogin = async (provider: string) => {
-    setIsLoading(true)
-    try {
-      // TODO: Implement OAuth login
-      console.log(`Logging in with ${provider}`)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      Alert.alert("Success", `${provider} login successful!`)
-    } catch {
-      Alert.alert("Error", `${provider} login failed. Please try again.`)
-    } finally {
-      setIsLoading(false)
-    }
+    // TODO: Implement OAuth login
+    console.log(`Logging in with ${provider}`)
+    Alert.alert("Info", `${provider} login coming soon!`)
   }
 
   const handleForgotPassword = () => {
