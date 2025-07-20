@@ -7,8 +7,11 @@ DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS accounts CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- Create user_profiles table
-CREATE TABLE IF NOT EXISTS user_profiles (
+-- Drop existing user_profiles table (since it has incompatible data)
+DROP TABLE IF EXISTS user_profiles CASCADE;
+
+-- Create user_profiles table with correct structure for Supabase Auth
+CREATE TABLE user_profiles (
   id SERIAL PRIMARY KEY,
   user_id UUID NOT NULL,
   full_name TEXT,
@@ -20,7 +23,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 -- Create games table
-CREATE TABLE IF NOT EXISTS games (
+CREATE TABLE games (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
@@ -29,7 +32,7 @@ CREATE TABLE IF NOT EXISTS games (
 );
 
 -- Create user_games table
-CREATE TABLE IF NOT EXISTS user_games (
+CREATE TABLE user_games (
   id SERIAL PRIMARY KEY,
   user_id UUID NOT NULL,
   game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
@@ -83,9 +86,9 @@ CREATE POLICY "Users can delete their own game records" ON user_games
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_games_user_id ON user_games(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_games_game_id ON user_games(game_id);
+CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
+CREATE INDEX idx_user_games_user_id ON user_games(user_id);
+CREATE INDEX idx_user_games_game_id ON user_games(game_id);
 
 -- Create a function to automatically create a user profile when a user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
