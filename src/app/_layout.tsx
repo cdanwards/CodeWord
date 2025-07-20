@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { SplashScreen, Tabs } from "expo-router"
+import { SplashScreen, Slot } from "expo-router"
 import { useFonts } from "@expo-google-fonts/space-grotesk"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
@@ -50,12 +50,7 @@ export default function Root() {
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <ThemeProvider>
         <KeyboardProvider>
-          <Tabs>
-            <Tabs.Screen name="index" options={{ href: null, headerShown: false }} />
-            <Tabs.Screen name="home" options={{ title: "Home", headerShown: false }} />
-            <Tabs.Screen name="games" options={{ title: "Games", headerShown: false }} />
-            <Tabs.Screen name="profile" options={{ title: "Profile", headerShown: false }} />
-          </Tabs>
+          <Slot />
         </KeyboardProvider>
       </ThemeProvider>
     </SafeAreaProvider>
