@@ -4013,6 +4013,11 @@ drizzle-kit@^0.31.4:
     esbuild "^0.25.4"
     esbuild-register "^3.5.0"
 
+drizzle-orm@^0.44.3:
+  version "0.44.3"
+  resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.44.3.tgz#5c1c6a9454c6a3fb3acd33111982b4846ed6e820"
+  integrity sha512-8nIiYQxOpgUicEL04YFojJmvC4DNO4KoyXsEIqN44+g6gNBr6hmVpWk3uyAt4CaTiRGDwoU+alfqNNeonLAFOQ==
+
 dunder-proto@^1.0.0, dunder-proto@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/dunder-proto/-/dunder-proto-1.0.1.tgz#d7ae667e1dc83482f8b70fd0f6eefc50da30f58a"

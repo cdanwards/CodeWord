@@ -80,12 +80,6 @@ export const SignupScreen = function SignupScreen() {
     }
   }
 
-  const handleOAuthSignup = async (provider: string) => {
-    // TODO: Implement OAuth signup
-    console.log(`Signing up with ${provider}`)
-    Alert.alert("Info", `${provider} signup coming soon!`)
-  }
-
   return (
     <Screen preset="scroll" contentContainerStyle={$styles.flex1}>
       <KeyboardAvoidingView
@@ -164,30 +158,6 @@ export const SignupScreen = function SignupScreen() {
               onPress={handleSignup}
               disabled={isLoading}
             />
-
-            {/* Divider */}
-            <View style={themed($dividerContainer)}>
-              <View style={themed($dividerLine)} />
-              <Text style={themed($dividerText)} text="or" />
-              <View style={themed($dividerLine)} />
-            </View>
-
-            {/* OAuth Buttons */}
-            <Button
-              text="Continue with Google"
-              style={themed($googleButton)}
-              textStyle={themed($oauthButtonText)}
-              onPress={() => handleOAuthSignup("Google")}
-              disabled={isLoading}
-            />
-
-            <Button
-              text="Continue with GitHub"
-              style={themed($githubButton)}
-              textStyle={themed($oauthButtonText)}
-              onPress={() => handleOAuthSignup("GitHub")}
-              disabled={isLoading}
-            />
           </View>
 
           {/* Footer */}
@@ -249,48 +219,6 @@ const $signUpButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
 const $signUpButtonText: ThemedStyle<TextStyle> = () => ({
   fontSize: 16,
   fontWeight: "600",
-})
-
-const $dividerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: spacing.lg,
-})
-
-const $dividerLine: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  flex: 1,
-  height: 1,
-  backgroundColor: colors.border,
-})
-
-const $dividerText: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
-  color: colors.text,
-  opacity: 0.5,
-  marginHorizontal: spacing.md,
-})
-
-const $googleButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  marginBottom: spacing.sm,
-  backgroundColor: colors.background,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $githubButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  marginBottom: spacing.lg,
-  backgroundColor: colors.background,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $oauthButtonText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  fontSize: 16,
-  fontWeight: "500",
 })
 
 const $footerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
