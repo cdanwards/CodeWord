@@ -6,6 +6,12 @@ import type {
   NewUserProfile,
   NewGame,
   NewUserGame,
+  GameWord,
+  NewGameWord,
+  Assignment,
+  NewAssignment,
+  Elimination,
+  NewElimination,
 } from "../../supabase/schema"
 
 // Database helper functions for working with Supabase Auth
@@ -121,6 +127,22 @@ export const db = {
     }
   },
 
+  findGameByCode: async (code: string): Promise<Game | null> => {
+    try {
+      const { data, error } = await supabase.from("games").select("*").eq("code", code).single()
+
+      if (error) {
+        console.error("Error finding game by code:", error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error("Error in findGameByCode:", error)
+      return null
+    }
+  },
+
   // User Game operations
   getUserGames: async (userId: string): Promise<UserGame[]> => {
     try {
@@ -133,7 +155,7 @@ export const db = {
         `,
         )
         .eq("user_id", userId)
-        .order("played_at", { ascending: false })
+        .order("joined_at", { ascending: false })
 
       if (error) {
         console.error("Error fetching user games:", error)
@@ -159,6 +181,144 @@ export const db = {
       return data
     } catch (error) {
       console.error("Error in createUserGame:", error)
+      return null
+    }
+  },
+
+  joinGameByCode: async (userId: string, code: string): Promise<UserGame | null> => {
+    try {
+      const game = await db.findGameByCode(code)
+      if (!game) return null
+
+      const newMembership: NewUserGame = {
+        userId,
+        gameId: game.id,
+      }
+
+      const { data, error } = await supabase
+        .from("user_games")
+        .insert(newMembership)
+        .select()
+        .single()
+      if (error) {
+        console.error("Error joining game by code:", error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error("Error in joinGameByCode:", error)
+      return null
+    }
+  },
+
+  // Game words
+  listGameWords: async (gameId: number): Promise<GameWord[]> => {
+    try {
+      const { data, error } = await supabase
+        .from("game_words")
+        .select("*")
+        .eq("game_id", gameId)
+        .order("day_number", { ascending: true })
+        .order("created_at", { ascending: true })
+
+      if (error) {
+        console.error("Error fetching game words:", error)
+        return []
+      }
+      return data || []
+    } catch (error) {
+      console.error("Error in listGameWords:", error)
+      return []
+    }
+  },
+
+  addGameWord: async (word: NewGameWord): Promise<GameWord | null> => {
+    try {
+      const { data, error } = await supabase.from("game_words").insert(word).select().single()
+      if (error) {
+        console.error("Error adding game word:", error)
+        return null
+      }
+      return data
+    } catch (error) {
+      console.error("Error in addGameWord:", error)
+      return null
+    }
+  },
+
+  // Assignments
+  listAssignments: async (gameId: number): Promise<Assignment[]> => {
+    try {
+      const { data, error } = await supabase
+        .from("assignments")
+        .select("*")
+        .eq("game_id", gameId)
+        .order("created_at", { ascending: true })
+
+      if (error) {
+        console.error("Error fetching assignments:", error)
+        return []
+      }
+      return data || []
+    } catch (error) {
+      console.error("Error in listAssignments:", error)
+      return []
+    }
+  },
+
+  createAssignment: async (assignment: NewAssignment): Promise<Assignment | null> => {
+    try {
+      const { data, error } = await supabase
+        .from("assignments")
+        .insert(assignment)
+        .select()
+        .single()
+      if (error) {
+        console.error("Error creating assignment:", error)
+        return null
+      }
+      return data
+    } catch (error) {
+      console.error("Error in createAssignment:", error)
+      return null
+    }
+  },
+
+  // Eliminations
+  listEliminations: async (gameId: number): Promise<Elimination[]> => {
+    try {
+      const { data, error } = await supabase
+        .from("eliminations")
+        .select("*")
+        .eq("game_id", gameId)
+        .order("occurred_at", { ascending: false })
+
+      if (error) {
+        console.error("Error fetching eliminations:", error)
+        return []
+      }
+      return data || []
+    } catch (error) {
+      console.error("Error in listEliminations:", error)
+      return []
+    }
+  },
+
+  recordElimination: async (elimination: NewElimination): Promise<Elimination | null> => {
+    try {
+      const { data, error } = await supabase
+        .from("eliminations")
+        .insert(elimination)
+        .select()
+        .single()
+      if (error) {
+        console.error("Error recording elimination:", error)
+        return null
+      }
+      return data
+    } catch (error) {
+      console.error("Error in recordElimination:", error)
       return null
     }
   },
