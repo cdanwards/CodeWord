@@ -25,19 +25,22 @@
 
 ### 4. Games MVP
 
+- [ ] Create a `CreateGameModal` (name, description optional, duration hours)
+- [ ] DB helper: `createGameHost({ name, description, durationHours })`
+- [x] DB helper: `findGameByCode(code)` and `joinGameByCode(userId, code)`
 - [ ] Create a `JoinGameModal` with a code input
-- [ ] DB helper: `findGameByCode(code)` and `joinGame(userId, gameId)`
-- [ ] Wire `GamesScreen` to list current `user_games` for the user
-- [ ] Add optimistic UI update on join
+- [ ] Wire `GamesScreen` to list current `user_games` for the user; add Create/Join actions
+- [ ] Add `GameDetailScreen` route `src/app/(app)/game/[id].tsx` (members, words, activity)
+- [ ] Add optimistic UI update on create/join
 
 ### 5. Developer experience
 
 - [ ] Add `README` project-specific setup (Supabase env, running tests, scripts)
-- [ ] Add sample data seed scripts for `games`
+- [x] Add sample data seed script for `games` (`scripts/seed-game.js`)
 - [ ] Add Reactotron usage notes and toggle
 
 ### 6. Tests
 
 - [ ] Add unit tests for `authStore` actions (signIn, signOut, refreshSession)
-- [ ] Add unit tests for DB helpers (mock supabase client)
+- [ ] Add unit tests for DB helpers (mock supabase client), including `createGameHost` and join by code
 - [ ] Add integration tests for login/signup screens (React Native Testing Library)

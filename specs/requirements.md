@@ -1,11 +1,22 @@
 ## CodewordApp Requirements
 
+Status (current)
+
+- Auth screens and session management working
+- Supabase schema for games implemented (games, user_games, game_words, assignments, eliminations) with RLS
+- Migrations applied locally and to remote
+- DB helpers in place: list games, find by code, join by code, words/assignments/eliminations CRUD
+- UI for games (create/join/detail) pending
+
 ### Scope (current milestone)
 
 - Authentication via Supabase: email/password sign up, sign in, sign out
 - Route protection: unauthenticated users see auth screens only; authenticated users see app tabs only
 - Profile: view basic account info; ensure a profile row exists on first sign-in
-- Games: show a list of the user’s joined games; allow joining via a game code
+- Games (MVP):
+  - Create a game (host) with name/description/duration → generates a code
+  - Join a game by code
+  - View my games list and navigate to a game detail screen
 - Internationalization and theming: continue working as-is
 - Basic error handling and loading states
 
@@ -22,6 +33,9 @@
 
 - As a user, I can view my profile info (name, email, created date), so I can confirm my account details
   - Acceptance: if I have no profile row yet, it’s created automatically
+
+- As a host, I can create a game with a name and duration, so others can join
+  - Acceptance: on create, I see the generated code and the game appears in my list immediately
 
 - As a user, I can see my joined games, so I know what I’m part of
   - Acceptance: if no games, I see an empty state
@@ -43,5 +57,5 @@
 ### Out of scope (later)
 
 - Password reset and email verification flows
-- Creating new games and in-game real-time features
+- In-game real-time features (live assignments/eliminations)
 - Analytics and monitoring

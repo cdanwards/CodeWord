@@ -75,3 +75,34 @@ Read our [Upgrade Guide](https://ignitecookbook.com/docs/recipes/UpdatingIgnite)
 💬 Join us on [Slack](https://join.slack.com/t/infiniteredcommunity/shared_invite/zt-1f137np4h-zPTq_CbaRFUOR_glUFs2UA) to discuss.
 
 📰 Make our Editor-in-chief happy by [reading the React Native Newsletter](https://reactnativenewsletter.com/).
+
+## Project Setup (CodewordApp)
+
+### Supabase Local
+
+- Install Docker Desktop and Supabase CLI
+- Start local stack: `supabase start`
+- Apply local migrations: `supabase db reset --local`
+
+### Migrations
+
+- Migrations live under `supabase/migrations/`
+- Gameplay migrations:
+  - `002_gameplay_extensions.sql`: adds game columns (code/host/status/duration/settings), extends `user_games`, creates `game_words`, `assignments`, `eliminations` + RLS
+  - `003_games_policies.sql`: RLS for hosts to insert/update/delete their own games
+- Push to remote (requires linked project): `supabase db push --linked`
+
+### Seeding a Game (remote)
+
+Set env and run:
+
+```
+SUPABASE_URL='https://<project-ref>.supabase.co' \
+SUPABASE_SERVICE_ROLE_KEY='<service-role-key>' \
+SEED_HOST_EMAIL='you@example.com' \
+SEED_GAME_NAME='Seeded Codeword Game' \
+SEED_WORDS='puzzle,secret,whisper,shadow,signal' \
+node scripts/seed-game.js
+```
+
+This will create a host user (if needed), insert a game, add host membership, and seed words.
