@@ -5,7 +5,12 @@ import { Spacer } from "@/components/ui/Spacer"
 
 export function GamesScreen() {
   return (
-    <Screen preset="fixed" style={$screen} contentContainerStyle={$contentContainer}>
+    <Screen
+      preset="scroll"
+      safeAreaEdges={["top", "bottom"]}
+      style={$screen}
+      contentContainerStyle={$contentContainer}
+    >
       <Text preset="heading">Your Games</Text>
       <Spacer size={16} />
       <Text preset="default">You&apos;re not in any games yet.</Text>

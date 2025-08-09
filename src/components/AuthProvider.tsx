@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 
 import { authClient } from "@/lib/auth-client"
+import { db } from "@/lib/database"
 import { useAuth } from "@/stores"
 
 interface AuthProviderProps {
@@ -39,6 +40,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           token: session.access_token,
           expiresAt: new Date(session.expires_at! * 1000),
         })
+
+        // Ensure a user profile exists in the database
+        try {
+          await db.ensureUserProfile(session.user.id, {
+            email: session.user.email || undefined,
+            name: user.name,
+          })
+        } catch (e) {
+          console.warn("ensureUserProfile failed", e)
+        }
       } else if (event === "SIGNED_OUT") {
         setUser(null)
         setSession(null)

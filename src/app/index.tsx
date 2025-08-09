@@ -1,37 +1,19 @@
 import { useEffect } from "react"
-import { View, ActivityIndicator, StyleSheet } from "react-native"
-import { Redirect } from "expo-router"
+import { router } from "expo-router"
 
 import { useAuth } from "@/stores"
 
 export default function Index() {
-  const { isAuthenticated, isLoading, checkAuth } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+
+  console.log("[Index]", { isLoading, isAuthenticated })
 
   useEffect(() => {
-    // Check authentication status when the app starts
-    checkAuth()
-  }, [checkAuth])
+    if (isLoading) return
+    console.log("[(index)]", { isLoading, isAuthenticated })
+    const target = isAuthenticated ? "/(app)/home" : "/(auth)/login"
+    router.replace(target)
+  }, [isLoading, isAuthenticated])
 
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-      </View>
-    )
-  }
-
-  // Redirect based on authentication status from Zustand store
-  if (isAuthenticated) {
-    return <Redirect href="/home" />
-  } else {
-    return <Redirect href="/(auth)/login" />
-  }
+  return null
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-})

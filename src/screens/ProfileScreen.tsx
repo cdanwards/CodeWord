@@ -55,7 +55,12 @@ export function ProfileScreen() {
   }
 
   return (
-    <Screen preset="fixed" style={$screen} contentContainerStyle={$contentContainer}>
+    <Screen
+      preset="scroll"
+      safeAreaEdges={["top", "bottom"]}
+      style={$screen}
+      contentContainerStyle={$contentContainer}
+    >
       {/* Profile Header */}
       <View style={themed($profileHeader)}>
         <Avatar name={user.name} image={user.image} size={80} />
@@ -146,7 +151,7 @@ const $screen: ViewStyle = {
 }
 
 const $contentContainer: ViewStyle = {
-  padding: 24,
+  // paddingHorizontal: 24,
 }
 
 const $profileHeader: ThemedStyle<ViewStyle> = ({ spacing }) => ({
@@ -214,7 +219,7 @@ const $signOutButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
 
 const $accountInfoContainer: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
   width: "100%",
-  padding: spacing.md,
+  paddingHorizontal: spacing.md,
   backgroundColor: colors.background,
   borderWidth: 1,
   borderColor: colors.border,

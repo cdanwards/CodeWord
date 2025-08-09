@@ -13,7 +13,7 @@ export function HomeScreen() {
 
   return (
     <Screen
-      preset="fixed"
+      preset="scroll"
       safeAreaEdges={["top", "bottom"]}
       style={$screen}
       contentContainerStyle={$contentContainer}

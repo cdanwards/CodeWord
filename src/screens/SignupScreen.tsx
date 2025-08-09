@@ -68,7 +68,7 @@ export const SignupScreen = function SignupScreen() {
       Alert.alert("Success!", "Account created successfully! Welcome to Codeword!", [
         {
           text: "Get Started",
-          onPress: () => router.replace("/"),
+          onPress: () => router.replace("/(app)/home"),
         },
       ])
     } else if (result.error) {

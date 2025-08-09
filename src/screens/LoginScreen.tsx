@@ -42,8 +42,8 @@ export const LoginScreen = function LoginScreen() {
     const result = await signIn(email, password)
 
     if (result.success) {
-      // Navigate to main app - the index.tsx will handle the redirect
-      router.replace("/")
+      // Navigate directly to the home tab
+      router.replace("/(app)/home")
     } else if (result.error) {
       Alert.alert("Error", result.error)
     }
