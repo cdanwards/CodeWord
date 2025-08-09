@@ -18,11 +18,9 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
   return {
     ...config,
     extra: {
-      // Add your environment variables here
-      supabaseUrl: process.env.SUPABASE_URL || "https://peuvdwygnzjoexsqildc.supabase.co",
-      supabaseAnonKey:
-        process.env.SUPABASE_ANON_KEY ||
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBldXZkd3lnbnpqb2V4c3FpbGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzI4MDAsImV4cCI6MjA1MDU0ODgwMH0.placeholder_key_replace_with_your_actual_key",
+      // Provided via environment; see .env.example
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
     },
     ios: {
       ...config.ios,

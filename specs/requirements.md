@@ -38,6 +38,7 @@
 - Persisted auth session (MMKV); auto-refresh via Supabase
 - Minimal logging in production; no secrets hardcoded in the client
 - Tests: unit coverage for utilities and store; smoke tests for i18n
+- Environment variables managed in `.env` (see `.env.example`)
 
 ### Out of scope (later)
 

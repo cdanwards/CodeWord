@@ -1,4 +1,6 @@
+import "react-native-url-polyfill/auto"
 import Constants from "expo-constants"
+import * as SecureStore from "expo-secure-store"
 import { createClient } from "@supabase/supabase-js"
 
 // Get environment variables from Expo Constants with fallback to process.env
@@ -14,9 +16,17 @@ if (!supabaseAnonKey) {
   throw new Error("SUPABASE_ANON_KEY is not defined. Check your .env file and app.config.ts")
 }
 
+// Storage adapter for React Native using Expo Secure Store
+const ExpoSecureStoreAdapter = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+}
+
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    storage: ExpoSecureStoreAdapter as any,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
