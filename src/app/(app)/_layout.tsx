@@ -1,5 +1,5 @@
 import { ActivityIndicator } from "react-native"
-import { Redirect, Tabs } from "expo-router"
+import { Redirect, Stack } from "expo-router"
 
 import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
@@ -12,13 +12,7 @@ export default function AppLayout() {
 
   // Prefer rendering app if already authenticated, even while loading
   if (isAuthenticated) {
-    return (
-      <Tabs screenOptions={{ headerShown: false }}>
-        <Tabs.Screen name="home" options={{ title: "Home" }} />
-        <Tabs.Screen name="games" options={{ title: "Games" }} />
-        <Tabs.Screen name="profile" options={{ title: "Profile" }} />
-      </Tabs>
-    )
+    return <Stack screenOptions={{ headerShown: false }} />
   }
 
   if (isLoading)

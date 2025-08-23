@@ -39,6 +39,7 @@ export const authClient = {
 
   // Sign out
   signOut: async () => {
+    console.log("[authClient] signOut")
     return await supabase.auth.signOut()
   },
 

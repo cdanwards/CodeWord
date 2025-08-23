@@ -172,20 +172,26 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signOut: async () => {
+        console.log("[authStore] signOut")
         const { setLoading, setError, setUser, setSession } = get()
 
         setLoading(true)
 
         try {
+          console.log("[authStore] signOut try")
           await authClient.signOut()
+          console.log("[authStore] signOut try done")
           setUser(null)
           setSession(null)
           setError(null)
+          console.log("[authStore] signOut done")
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : "Signout failed"
+          console.log("[authStore] signOut error", errorMessage)
           setError(errorMessage)
         } finally {
           setLoading(false)
+          console.log("[authStore] signOut finally")
         }
       },
 

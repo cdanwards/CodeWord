@@ -301,6 +301,7 @@ const $justifyFlexEnd: ViewStyle = {
 }
 
 const $innerStyle: ViewStyle = {
+  flex: 1,
   justifyContent: "flex-start",
   alignItems: "stretch",
 }

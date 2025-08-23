@@ -11,7 +11,7 @@ export default function Index() {
   useEffect(() => {
     if (isLoading) return
     console.log("[(index)]", { isLoading, isAuthenticated })
-    const target = isAuthenticated ? "/(app)/home" : "/(auth)/login"
+    const target = isAuthenticated ? "/(app)/(tabs)/home" : "/(auth)/login"
     router.replace(target)
   }, [isLoading, isAuthenticated])
 

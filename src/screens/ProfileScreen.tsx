@@ -15,21 +15,10 @@ export function ProfileScreen() {
   const { user, isAuthenticated, signOut, isLoading } = useAuth()
 
   const handleSignOut = async () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: async () => {
-          await signOut()
-          // Navigate to index which will handle the redirect based on auth state
-          router.replace("/")
-        },
-      },
-    ])
+    console.log("[ProfileScreen] handleSignOut")
+    await signOut()
+    console.log("[ProfileScreen] handleSignOut done")
+    router.replace("/(auth)/login")
   }
 
   const handleEditProfile = () => {
@@ -57,6 +46,7 @@ export function ProfileScreen() {
   return (
     <Screen
       preset="scroll"
+      keyboardShouldPersistTaps="always"
       safeAreaEdges={["top", "bottom"]}
       style={$screen}
       contentContainerStyle={$contentContainer}
@@ -108,12 +98,7 @@ export function ProfileScreen() {
 
         <Spacer size={12} />
 
-        <Button
-          text="Sign Out"
-          style={themed($signOutButton)}
-          onPress={handleSignOut}
-          disabled={isLoading}
-        />
+        <Button text="Sign Out" style={themed($signOutButton)} onPress={handleSignOut} />
       </View>
 
       <Spacer size={24} />

@@ -68,7 +68,7 @@ export const SignupScreen = function SignupScreen() {
       Alert.alert("Success!", "Account created successfully! Welcome to Codeword!", [
         {
           text: "Get Started",
-          onPress: () => router.replace("/(app)/home"),
+          onPress: () => router.replace("/(app)/(tabs)/home"),
         },
       ])
     } else if (result.error) {
@@ -77,16 +77,12 @@ export const SignupScreen = function SignupScreen() {
   }
 
   return (
-    <Screen preset="scroll" contentContainerStyle={$styles.flex1}>
+    <Screen safeAreaEdges={["top", "bottom"]} preset="fixed" contentContainerStyle={$styles.flex1}>
       <KeyboardAvoidingView
-        style={$styles.flex1}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <ScrollView
-          contentContainerStyle={$styles.flex1}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={themed($headerContainer)}>
             <Image style={themed($logo)} source={logoImage} resizeMode="contain" />

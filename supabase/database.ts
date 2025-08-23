@@ -8,6 +8,20 @@ const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.SUPA
 const supabaseAnonKey =
   Constants.expoConfig?.extra?.supabaseAnonKey || process.env.SUPABASE_ANON_KEY
 
+console.log("🔧 Supabase Config Debug:")
+console.log(
+  "- Constants.expoConfig?.extra?.supabaseUrl:",
+  !!Constants.expoConfig?.extra?.supabaseUrl,
+)
+console.log(
+  "- Constants.expoConfig?.extra?.supabaseAnonKey:",
+  !!Constants.expoConfig?.extra?.supabaseAnonKey,
+)
+console.log("- process.env.SUPABASE_URL:", !!process.env.SUPABASE_URL)
+console.log("- process.env.SUPABASE_ANON_KEY:", !!process.env.SUPABASE_ANON_KEY)
+console.log("- Final supabaseUrl:", !!supabaseUrl)
+console.log("- Final supabaseAnonKey:", !!supabaseAnonKey)
+
 if (!supabaseUrl) {
   throw new Error("SUPABASE_URL is not defined. Check your .env file and app.config.ts")
 }
@@ -32,6 +46,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 })
+
+// Re-export config for consumers that need raw values (e.g., network checks)
+export const SUPABASE_URL = supabaseUrl
+export const SUPABASE_ANON_KEY = supabaseAnonKey
 
 // Test connection function
 export async function testConnection() {

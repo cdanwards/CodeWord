@@ -25,13 +25,13 @@
 
 ### 4. Games MVP
 
-- [ ] Create a `CreateGameModal` (name, description optional, duration hours)
-- [ ] DB helper: `createGameHost({ name, description, durationHours })`
+- [x] Create a `CreateGameModal` (name, description optional, duration hours)
+- [x] DB helper: `createGameHost({ name, description, durationHours })`
 - [x] DB helper: `findGameByCode(code)` and `joinGameByCode(userId, code)`
-- [ ] Create a `JoinGameModal` with a code input
-- [ ] Wire `GamesScreen` to list current `user_games` for the user; add Create/Join actions
-- [ ] Add `GameDetailScreen` route `src/app/(app)/game/[id].tsx` (members, words, activity)
-- [ ] Add optimistic UI update on create/join
+- [x] Create a `JoinGameModal` with a code input
+- [x] Wire `GamesScreen` to list current `user_games` for the user; add Create/Join actions
+- [x] Add `GameDetailScreen` route `src/app/(app)/game/[id].tsx` (members, words, activity)
+- [x] Add optimistic UI update on create/join
 
 ### 5. Developer experience
 

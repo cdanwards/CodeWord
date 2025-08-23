@@ -10,7 +10,7 @@ export default function AuthLayout() {
 
   console.log("[(auth) layout]", { isLoading, isAuthenticated })
 
-  if (isAuthenticated) return <Redirect href="/(app)/home" />
+  if (isAuthenticated) return <Redirect href="/(app)/(tabs)/home" />
   if (isLoading)
     return (
       <ActivityIndicator

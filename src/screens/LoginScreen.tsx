@@ -43,7 +43,7 @@ export const LoginScreen = function LoginScreen() {
 
     if (result.success) {
       // Navigate directly to the home tab
-      router.replace("/(app)/home")
+      router.replace("/(app)/(tabs)/home")
     } else if (result.error) {
       Alert.alert("Error", result.error)
     }
@@ -54,7 +54,7 @@ export const LoginScreen = function LoginScreen() {
   }
 
   return (
-    <Screen preset="scroll" contentContainerStyle={$styles.flex1}>
+    <Screen safeAreaEdges={["top", "bottom"]} preset="fixed" contentContainerStyle={$styles.flex1}>
       <KeyboardAvoidingView
         style={$styles.flex1}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

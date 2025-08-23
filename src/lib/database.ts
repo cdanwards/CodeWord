@@ -1,4 +1,5 @@
 import { supabase } from "../../supabase/database"
+import { withDatabaseFallback } from "./network-utils"
 import type {
   UserProfile,
   Game,
@@ -15,6 +16,19 @@ import type {
 } from "../../supabase/schema"
 
 // Database helper functions for working with Supabase Auth
+
+// Small helper to ensure long requests never hang the UI
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timeoutId: any
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+  })
+  try {
+    return (await Promise.race([promise, timeoutPromise])) as T
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
 
 export const db = {
   // User Profile operations
@@ -81,7 +95,11 @@ export const db = {
   // Game operations
   getAllGames: async (): Promise<Game[]> => {
     try {
-      const { data, error } = await supabase.from("games").select("*").order("name")
+      const { data, error } = await withTimeout<any>(
+        supabase.from("games").select("*").order("name") as unknown as Promise<any>,
+        8000,
+        "getAllGames",
+      )
 
       if (error) {
         console.error("Error fetching games:", error)
@@ -97,7 +115,11 @@ export const db = {
 
   getGame: async (gameId: number): Promise<Game | null> => {
     try {
-      const { data, error } = await supabase.from("games").select("*").eq("id", gameId).single()
+      const { data, error } = await withTimeout<any>(
+        supabase.from("games").select("*").eq("id", gameId).single() as unknown as Promise<any>,
+        8000,
+        "getGame",
+      )
 
       if (error) {
         console.error("Error fetching game:", error)
@@ -113,7 +135,11 @@ export const db = {
 
   createGame: async (game: NewGame): Promise<Game | null> => {
     try {
-      const { data, error } = await supabase.from("games").insert(game).select().single()
+      const { data, error } = await withTimeout<any>(
+        supabase.from("games").insert(game).select().single() as unknown as Promise<any>,
+        10000,
+        "createGame",
+      )
 
       if (error) {
         console.error("Error creating game:", error)
@@ -123,6 +149,90 @@ export const db = {
       return data
     } catch (error) {
       console.error("Error in createGame:", error)
+      return null
+    }
+  },
+
+  createGameHost: async (input: {
+    name: string
+    description?: string
+    durationHours?: number
+  }): Promise<Game | null> => {
+    try {
+      const userId = await db.getCurrentUserId()
+      if (!userId) {
+        console.error("No authenticated user to create game")
+        return null
+      }
+
+      // Generate a unique join code
+      const generateCode = (length = 6) => {
+        const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        let result = ""
+        for (let i = 0; i < length; i += 1) {
+          result += alphabet[Math.floor(Math.random() * alphabet.length)]
+        }
+        return result
+      }
+
+      let code = generateCode(6)
+      for (let attempts = 0; attempts < 5; attempts += 1) {
+        const { data: existing, error: existErr } = await supabase
+          .from("games")
+          .select("id")
+          .eq("code", code)
+          .maybeSingle()
+        if (existErr) {
+          console.warn("Error checking code uniqueness (continuing):", existErr.message)
+          break
+        }
+        if (!existing) break
+        code = generateCode(6)
+      }
+
+      const durationHours = input.durationHours ?? 72
+      const insertPayload = {
+        name: input.name,
+        description: input.description ?? null,
+        code,
+        host_user_id: userId,
+        status: "lobby",
+        duration_hours: durationHours,
+        settings: {},
+      }
+
+      const { data: game, error } = await withTimeout<any>(
+        supabase.from("games").insert(insertPayload).select().single() as unknown as Promise<any>,
+        12000,
+        "createGameHost:insertGame",
+      )
+      if (error) {
+        console.error("Error creating host game:", error)
+        return null
+      }
+
+      const { error: ugErr } = await withTimeout<any>(
+        supabase
+          .from("user_games")
+          .insert({
+            user_id: userId,
+            game_id: game.id,
+            role: "host",
+            status: "active",
+            is_ready: false,
+          })
+          .select() as unknown as Promise<any>,
+        8000,
+        "createGameHost:insertMembership",
+      )
+      if (ugErr) {
+        console.error("Error inserting host membership:", ugErr)
+        // continue; game exists even if membership insert fails
+      }
+
+      return game
+    } catch (error) {
+      console.error("Error in createGameHost:", error)
       return null
     }
   },
@@ -145,6 +255,41 @@ export const db = {
 
   // User Game operations
   getUserGames: async (userId: string): Promise<UserGame[]> => {
+    return withDatabaseFallback(
+      async () => {
+        try {
+          const { data, error } = await withTimeout<any>(
+            supabase
+              .from("user_games")
+              .select(
+                `
+                *,
+                games (*)
+              `,
+              )
+              .eq("user_id", userId)
+              .order("joined_at", { ascending: false }) as unknown as Promise<any>,
+            10000,
+            "getUserGames",
+          )
+
+          if (error) {
+            console.error("Error fetching user games:", error)
+            return []
+          }
+
+          return data || []
+        } catch (err) {
+          console.warn("getUserGames guarded error:", (err as Error).message)
+          return []
+        }
+      },
+      [], // Fallback: empty array
+      "getUserGames",
+    )
+  },
+
+  getGameMembers: async (gameId: number): Promise<UserGame[]> => {
     try {
       const { data, error } = await supabase
         .from("user_games")
@@ -154,17 +299,17 @@ export const db = {
           games (*)
         `,
         )
-        .eq("user_id", userId)
-        .order("joined_at", { ascending: false })
+        .eq("game_id", gameId)
+        .order("joined_at", { ascending: true })
 
       if (error) {
-        console.error("Error fetching user games:", error)
+        console.error("Error fetching game members:", error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error("Error in getUserGames:", error)
+      console.error("Error in getGameMembers:", error)
       return []
     }
   },
@@ -195,11 +340,15 @@ export const db = {
         gameId: game.id,
       }
 
-      const { data, error } = await supabase
-        .from("user_games")
-        .insert(newMembership)
-        .select()
-        .single()
+      const { data, error } = await withTimeout<any>(
+        supabase
+          .from("user_games")
+          .insert(newMembership)
+          .select()
+          .single() as unknown as Promise<any>,
+        8000,
+        "joinGameByCode",
+      )
       if (error) {
         console.error("Error joining game by code:", error)
         return null

@@ -21,6 +21,8 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       // Provided via environment; see .env.example
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+      // Feature flags
+      networkChecksEnabled: process.env.NETWORK_CHECKS_ENABLED === "1" ? true : false,
     },
     ios: {
       ...config.ios,

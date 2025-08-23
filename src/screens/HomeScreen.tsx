@@ -1,4 +1,4 @@
-import { View, ViewStyle, TextStyle } from "react-native"
+import { ViewStyle, TextStyle } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
@@ -38,11 +38,6 @@ export function HomeScreen() {
         </>
       )}
 
-      <View style={$redBox}>
-        <Text style={$whiteText}>Test Red Background</Text>
-      </View>
-      <Spacer size={12} />
-      <Text style={$blueText}>Test Blue Text</Text>
       <Spacer size={32} />
       <Button text="Join a Game" onPress={() => router.push("/games")} />
     </Screen>
@@ -67,21 +62,4 @@ const $welcomeText: TextStyle = {
 const $emailText: TextStyle = {
   textAlign: "center",
   opacity: 0.7,
-}
-
-const $redBox: ViewStyle = {
-  backgroundColor: "#ef4444",
-  padding: 16,
-  borderRadius: 8,
-}
-
-const $whiteText: TextStyle = {
-  color: "#ffffff",
-  fontSize: 18,
-  fontWeight: "bold" as const,
-}
-
-const $blueText: TextStyle = {
-  color: "#3b82f6",
-  fontSize: 18,
 }

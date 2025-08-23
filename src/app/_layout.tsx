@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { SplashScreen, Slot } from "expo-router"
 import { useFonts } from "@expo-google-fonts/space-grotesk"
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 
@@ -48,14 +50,20 @@ export default function Root() {
   }
 
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemeProvider>
-        <AuthProvider>
-          <KeyboardProvider>
-            <Slot />
-          </KeyboardProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={$root}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <ThemeProvider>
+          <AuthProvider>
+            <BottomSheetModalProvider>
+              <KeyboardProvider>
+                <Slot />
+              </KeyboardProvider>
+            </BottomSheetModalProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }
+
+const $root = { flex: 1 }
