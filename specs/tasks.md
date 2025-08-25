@@ -44,3 +44,36 @@
 - [ ] Add unit tests for `authStore` actions (signIn, signOut, refreshSession)
 - [ ] Add unit tests for DB helpers (mock supabase client), including `createGameHost` and join by code
 - [ ] Add integration tests for login/signup screens (React Native Testing Library)
+
+_Last updated: 2025-08-23_
+
+### Backend / DB Helpers
+
+- [ ] Update `getGameMembers` to join `user_profiles` + `auth.users`.
+- [ ] Add `getMyTarget(gameId, userId)`.
+- [ ] Add `listEliminations(gameId)`.
+- [ ] Add `startGame(id)`, `endGame(id)`.
+- [ ] Add `leaveGame(gameId, userId)` + `deleteGame(gameId)` guards.
+- [ ] (Optional) Auto-seed words on game creation.
+
+### UI Features
+
+- [ ] **Home:** add empty state + featured game resume card.
+- [ ] **Games List:** show join code with Copy/Share, status chip, time remaining.
+- [ ] **Game Detail:**
+  - Members list w/ names + roles.
+  - Host start/end controls + countdown timer.
+  - Target card + eliminations feed.
+  - Leave/Delete buttons.
+  - Empty-state components for sections.
+
+- [ ] **Create Game Modal:** post-success sheet w/ code + Copy/Share.
+- [ ] **Join Game Modal:** post-success sheet, clean styles, good error messages.
+- [ ] **Profile:** enable display name editing + persist.
+- [ ] **All Screens:** add toasts, polish empty/error states, remove debug colors.
+
+### Polish
+
+- [ ] Implement global Copy/Share utility.
+- [ ] Implement Toast component for success messages.
+- [ ] Add pull-to-refresh behavior on Games list + Game detail.

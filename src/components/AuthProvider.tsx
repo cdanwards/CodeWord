@@ -12,8 +12,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { checkAuth, setUser, setSession } = useAuth()
 
   useEffect(() => {
-    // Check authentication status when the app starts
-    checkAuth()
+    // Check authentication status when the app starts with timeout guard
+    let cancelled = false
+    const run = async () => {
+      const timeout = setTimeout(() => {
+        if (!cancelled) {
+          // Ensure loading does not hang if getSession stalls
+          try {
+            // Force store to stop loading by calling checkAuth which resets loading in finally
+            checkAuth()
+          } catch {}
+        }
+      }, 4500)
+      try {
+        await checkAuth()
+      } finally {
+        clearTimeout(timeout)
+      }
+    }
+    run()
 
     // Listen for auth state changes from Supabase
     const {
@@ -58,6 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Cleanup subscription on unmount
     return () => {
+      cancelled = true
       subscription.unsubscribe()
     }
   }, [checkAuth, setUser, setSession])

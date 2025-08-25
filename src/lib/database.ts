@@ -269,7 +269,7 @@ export const db = {
               )
               .eq("user_id", userId)
               .order("joined_at", { ascending: false }) as unknown as Promise<any>,
-            10000,
+            20000,
             "getUserGames",
           )
 
@@ -335,9 +335,10 @@ export const db = {
       const game = await db.findGameByCode(code)
       if (!game) return null
 
-      const newMembership: NewUserGame = {
-        userId,
-        gameId: game.id,
+      // Insert must use snake_case column names expected by the database
+      const newMembership = {
+        user_id: userId,
+        game_id: game.id,
       }
 
       const { data, error } = await withTimeout<any>(
@@ -346,7 +347,7 @@ export const db = {
           .insert(newMembership)
           .select()
           .single() as unknown as Promise<any>,
-        8000,
+        15000,
         "joinGameByCode",
       )
       if (error) {

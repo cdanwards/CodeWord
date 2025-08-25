@@ -181,17 +181,18 @@ export const useAuthStore = create<AuthState>()(
           console.log("[authStore] signOut try")
           await authClient.signOut()
           console.log("[authStore] signOut try done")
-          setUser(null)
-          setSession(null)
           setError(null)
-          console.log("[authStore] signOut done")
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : "Signout failed"
           console.log("[authStore] signOut error", errorMessage)
+          // We still proceed to clear local state to ensure logout UX
           setError(errorMessage)
         } finally {
+          // Always clear local session/user regardless of network outcome
+          setUser(null)
+          setSession(null)
           setLoading(false)
-          console.log("[authStore] signOut finally")
+          console.log("[authStore] signOut finally (state cleared)")
         }
       },
 

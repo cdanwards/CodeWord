@@ -59,3 +59,67 @@ Status (current)
 - Password reset and email verification flows
 - In-game real-time features (live assignments/eliminations)
 - Analytics and monitoring
+
+# 📄 `specs/requirements.md`
+
+_Last updated: 2025-08-23_
+
+## MVP Acceptance Criteria
+
+### Home
+
+- [ ] First-time user sees friendly empty state with “Enter Code.”
+- [ ] Returning player with games sees a “Resume Game” card + “View all games” link.
+
+### Games List
+
+- [ ] User sees all their games with **name, description, status, role, code**.
+- [ ] Copy/share code works from the list.
+- [ ] Status chip correct for lobby/active/ended.
+- [ ] Active games show time remaining.
+- [ ] Tapping navigates to `/game/[id]`.
+
+### Game Detail
+
+- [ ] Members list shows **display name + role** (not game name).
+- [ ] Host can **start/end game**.
+- [ ] All players see **countdown timer**.
+- [ ] Each player sees **“Your Target”** (or placeholder if not assigned).
+- [ ] Eliminations list shows **killer, target, word, timestamp**.
+- [ ] Players can **leave lobby**.
+- [ ] Host can **delete game** before active.
+- [ ] Empty-state messaging for members, words, eliminations.
+- [ ] Words listed per game (auto-seed or host-managed).
+
+### Create Game
+
+- [ ] After create, user sees **confirmation with join code**, Copy + Share.
+- [ ] Optional: auto-seed default word set.
+
+### Join Game
+
+- [ ] After join, success sheet shows: **“Joined GameName”**, Copy + Share code, “Go to Game.”
+- [ ] Good error states for invalid code, already joined.
+- [ ] Debug styles removed.
+
+### Profile
+
+- [ ] Displays avatar/initials, display name, email, member since, updated at.
+- [ ] User can **edit display name**; change persists across app.
+- [ ] Email verified flag reflects actual Supabase field (not hardcoded).
+- [ ] Sign out with confirm works.
+
+### Cross-Cutting
+
+- [ ] Toasts for success, inline text for errors.
+- [ ] Empty states for Home, Games, Game Detail sections.
+- [ ] Copy/share helpers wherever a code appears.
+- [ ] Pull-to-refresh (or refetch on focus) acceptable in place of realtime.
+
+### Ending the game
+
+- [ ] When the end time is reached, the game is ended and the host can see the results.
+- [ ] The Status should be updated to "Ended"
+- [ ] Players should no longer be able to interact with other players.
+- [ ] The host should be able to see the results of the game.
+- [ ] The players should be able to see the results of the game.
