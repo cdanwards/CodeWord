@@ -178,9 +178,9 @@ export function Button(props: ButtonProps) {
   )
 }
 
-const $baseViewStyle: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  minHeight: 56,
-  borderRadius: 4,
+const $baseViewStyle: ThemedStyle<ViewStyle> = ({ spacing, radii, size }) => ({
+  minHeight: size.controlHeight,
+  borderRadius: radii.sm,
   justifyContent: "center",
   alignItems: "center",
   paddingVertical: spacing.sm,
@@ -211,8 +211,8 @@ const $viewPresets: Record<Presets, ThemedStyleArray<ViewStyle>> = {
   default: [
     $styles.row,
     $baseViewStyle,
-    ({ colors }) => ({
-      borderWidth: 1,
+    ({ colors, borderWidth }) => ({
+      borderWidth: borderWidth.thin,
       borderColor: colors.palette.neutral400,
       backgroundColor: colors.palette.neutral100,
     }),

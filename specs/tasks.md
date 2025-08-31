@@ -72,6 +72,10 @@ _Last updated: 2025-08-23_
 - [ ] **Profile:** enable display name editing + persist.
 - [ ] **All Screens:** add toasts, polish empty/error states, remove debug colors.
 
+### Design References
+
+- Link: `specs/design/inspiration.md` contains annotated inspiration for Games List, Home, and activity sections to guide UI polish and acceptance criteria.
+
 ### Polish
 
 - [ ] Implement global Copy/Share utility.

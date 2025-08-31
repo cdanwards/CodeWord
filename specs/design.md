@@ -44,3 +44,7 @@
 - Game code scheme and validation (6-char alphanumeric; client-generated + uniqueness check for MVP)
 - In-game real-time updates (realtime channels vs RPCs)
 - Password reset strategy (Magic Link vs. OTP)
+
+### References
+
+- See `specs/design/inspiration.md` for annotated UI inspiration and component mapping.
