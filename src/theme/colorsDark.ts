@@ -47,4 +47,15 @@ export const colors = {
   separator: palette.neutral300,
   error: palette.angry500,
   errorBackground: palette.angry100,
+  success: "#22C55E",
+  successBackground: "#052e12",
+  warning: "#F59E0B",
+  warningBackground: "#1f1a07",
+  info: "#60A5FA",
+  infoBackground: "#0b1a33",
+  status: {
+    waiting: { bg: palette.neutral300, text: palette.neutral600 },
+    active: { bg: "#1e293b", text: "#93c5fd" },
+    ended: { bg: palette.neutral200, text: palette.neutral600 },
+  },
 } as const

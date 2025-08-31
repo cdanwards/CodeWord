@@ -82,4 +82,21 @@ export const colors = {
    * Error Background.
    */
   errorBackground: palette.angry100,
+  /**
+   * Semantic roles
+   */
+  success: "#16A34A",
+  successBackground: "#DCFCE7",
+  warning: "#B45309",
+  warningBackground: "#FEF3C7",
+  info: "#2563EB",
+  infoBackground: "#DBEAFE",
+  /**
+   * Status pills used across lists/cards
+   */
+  status: {
+    waiting: { bg: palette.neutral200, text: palette.neutral600 },
+    active: { bg: "#E0E7FF", text: "#4338CA" },
+    ended: { bg: palette.neutral300, text: palette.neutral600 },
+  },
 } as const

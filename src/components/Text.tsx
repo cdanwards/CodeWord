@@ -11,7 +11,7 @@ import { typography } from "@/theme/typography"
 
 type Sizes = keyof typeof $sizeStyles
 type Weights = keyof typeof typography.primary
-type Presets = "default" | "bold" | "heading" | "subheading" | "formLabel" | "formHelper"
+type Presets = "default" | "bold" | "heading" | "subheading" | "formLabel" | "formHelper" | "meta"
 
 export interface TextProps extends RNTextProps {
   /**
@@ -112,5 +112,12 @@ const $presets: Record<Presets, ThemedStyleArray<TextStyle>> = {
   subheading: [$baseStyle, { ...$sizeStyles.lg, ...$fontWeightStyles.medium }],
   formLabel: [$baseStyle, { ...$fontWeightStyles.medium }],
   formHelper: [$baseStyle, { ...$sizeStyles.sm, ...$fontWeightStyles.normal }],
+  meta: [
+    $baseStyle,
+    (theme) => ({
+      ...$sizeStyles.xs,
+      color: theme.colors.textDim,
+    }),
+  ],
 }
 const $rtlStyle: TextStyle = isRTL ? { writingDirection: "rtl" } : {}

@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useState } from "react"
-import { View, FlatList, TouchableOpacity, ViewStyle } from "react-native"
+import { View, FlatList, ViewStyle } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
+import { Card } from "@/components/Card"
 import { CreateGameModal } from "@/components/CreateGameModal"
 import { JoinGameModal } from "@/components/JoinGameModal"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { IconButton } from "@/components/ui/IconButton"
 import { Spacer } from "@/components/ui/Spacer"
+import { StatusPill } from "@/components/ui/StatusPill"
 import { db } from "@/lib/database"
 import { runNetworkTests } from "@/lib/network-test"
 import { networkManager } from "@/lib/network-utils"
 import { useAuth } from "@/stores"
+import { copyToClipboard, shareCode } from "@/utils/share"
 
 import type { UserGame, Game } from "../../supabase/schema"
 
@@ -82,15 +86,36 @@ export function GamesScreen() {
     const game = item.games
     if (!game) return null
 
+    const statusVariant =
+      (game.status as any) === "active"
+        ? "active"
+        : (game.status as any) === "ended"
+          ? "ended"
+          : "waiting"
+
     return (
-      <TouchableOpacity style={$gameItem} onPress={() => router.push(`/game/${game.id}`)}>
-        <Text preset="subheading" text={game.name} />
-        {game.description && (
-          <Text preset="formHelper" text={game.description} style={$gameDescription} />
-        )}
-        <Text preset="formHelper" text={`Code: ${game.code}`} style={$gameCode} />
-        <Text preset="formHelper" text={`Role: ${item.role}`} style={$gameRole} />
-      </TouchableOpacity>
+      <Card
+        onPress={() => router.push(`/game/${game.id}`)}
+        HeadingComponent={
+          <View style={$rowBetween}>
+            <Text weight="bold" size="lg" text={game.name} />
+            <StatusPill variant={statusVariant} />
+          </View>
+        }
+        ContentComponent={
+          <View>
+            {!!game.description && <Text preset="meta" text={game.description} />}
+            <View style={$rowMeta}>
+              <Text preset="meta" text={`Code: #${game.code}`} />
+              <View style={$rowActions}>
+                <IconButton icon="copy" onPress={() => copyToClipboard(`#${game.code}`)} />
+                <IconButton icon="share" onPress={() => shareCode(game.code)} />
+              </View>
+            </View>
+            <Text preset="meta" text={`Role: ${item.role?.toLowerCase()}`} />
+          </View>
+        }
+      />
     )
   }
 
@@ -169,31 +194,17 @@ const $gamesListContent = {
   paddingBottom: 16,
 }
 
-const $gameItem = {
-  backgroundColor: "#f5f5f5",
-  padding: 16,
-  borderRadius: 8,
-  marginBottom: 12,
-}
-
-const $gameDescription = {
-  marginTop: 4,
-  color: "#666",
-}
-
-const $gameCode = {
-  marginTop: 4,
-  fontFamily: "monospace",
-  color: "#007AFF",
-}
-
-const $gameRole = {
-  marginTop: 4,
-  color: "#666",
-  textTransform: "capitalize" as const,
-}
+// Deprecated local styles retained for reference during refactor; not used with Card layout
 
 const $emptyListText = {
   color: "#666",
   fontSize: 16,
 }
+
+const $rowBetween = {
+  flexDirection: "row" as const,
+  alignItems: "center" as const,
+  justifyContent: "space-between" as const,
+}
+const $rowMeta = { flexDirection: "row" as const, alignItems: "center" as const, marginTop: 4 }
+const $rowActions = { flexDirection: "row" as const, marginLeft: 8, gap: 8 }
