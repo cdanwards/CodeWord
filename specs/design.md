@@ -4,7 +4,8 @@
 
 - Expo Router app with two route groups:
   - `(auth)`: `login.tsx`, `signup.tsx`
-  - `(app)`: tabbed `home.tsx`, `games.tsx`, `profile.tsx`
+  - `(app)`: tabbed `home.tsx`, `profile.tsx`
+- Games list becomes a non-tab screen reachable from Home (e.g., `home/games.tsx` or a stack route under `(app)`).
 - Root wrappers: `ThemeProvider`, `AuthProvider`, i18n init, fonts
 - State: Zustand `authStore` persisted to MMKV; hooks in `src/stores/hooks.ts`
 - Auth: `src/lib/auth-client.ts` wraps Supabase client
@@ -25,14 +26,17 @@
 ### Routing and guards
 
 - `src/app/index.tsx` redirects to `(auth)/login` when `!isAuthenticated`, otherwise to `/home`
+- `(app)` has a Tab navigator with two tabs: Home and Profile
+- Games list is a stack screen pushed from Home. Game Detail remains at `/game/[id]`.
 - `AuthProvider` listens to `onAuthStateChange` and sets `user` + `session`
 
 ### Components & UX
 
 - Login/Signup: simple forms with validation and Alert-based errors
-- Profile: displays user info and sign out action
-- Games: list of memberships; actions to Create or Join; navigate to Game Detail
+- Home: top bar with app name "Codeword" and greeting; large buttons for Enter Code and Create Game; conditional Resume Game card; link to view all games
+- Games List (from Home): list memberships; Copy/Share code; status/time remaining; tap to Game Detail
 - Game Detail: shows members, words, and activity; host-only controls shown conditionally
+- Profile: header with avatar (editable), display name/codename, tagline; sections for Account, Stats, Achievements, Game History, Settings as outlined in requirements
 
 ### Environment / config
 

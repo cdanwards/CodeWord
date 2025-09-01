@@ -2,10 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { View, FlatList, ViewStyle } from "react-native"
 import { useRouter } from "expo-router"
 
-import { Button } from "@/components/Button"
 import { Card } from "@/components/Card"
-import { CreateGameModal } from "@/components/CreateGameModal"
-import { JoinGameModal } from "@/components/JoinGameModal"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { IconButton } from "@/components/ui/IconButton"
@@ -27,8 +24,6 @@ type UserGameWithGame = UserGame & {
 export function GamesScreen() {
   const router = useRouter()
   const { isAuthenticated, user } = useAuth()
-  const [createVisible, setCreateVisible] = useState(false)
-  const [joinVisible, setJoinVisible] = useState(false)
   const [games, setGames] = useState<UserGameWithGame[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -71,16 +66,6 @@ export function GamesScreen() {
   useEffect(() => {
     loadGames()
   }, [loadGames])
-
-  const handleGameCreated = (_gameId: number) => {
-    // Optimistically refresh the games list
-    loadGames()
-  }
-
-  const handleGameJoined = (_gameId: number) => {
-    // Optimistically refresh the games list
-    loadGames()
-  }
 
   function renderGame({ item }: { item: UserGameWithGame }) {
     const game = item.games
@@ -141,26 +126,10 @@ export function GamesScreen() {
                 <Text style={$emptyListText}>{loading ? "Loading..." : "No games yet"}</Text>
               }
             />
-            <View style={$buttonContainer}>
-              <Spacer size={16} />
-              <Button text="Create Game" onPress={() => setCreateVisible(true)} />
-              <Spacer size={12} />
-              <Button text="Enter Game Code" onPress={() => setJoinVisible(true)} />
-            </View>
+            <View style={$buttonContainer} />
           </View>
         </View>
       </View>
-
-      <CreateGameModal
-        visible={createVisible}
-        onClose={() => setCreateVisible(false)}
-        onCreated={handleGameCreated}
-      />
-      <JoinGameModal
-        visible={joinVisible}
-        onClose={() => setJoinVisible(false)}
-        onJoined={handleGameJoined}
-      />
     </Screen>
   )
 }

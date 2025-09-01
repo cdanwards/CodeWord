@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useState } from "react"
 import { View, FlatList } from "react-native"
-import { useLocalSearchParams, useRouter } from "expo-router"
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router"
 
 import { Button } from "@/components/Button"
 import { Screen } from "@/components/Screen"
@@ -17,6 +17,7 @@ type UserGameWithGame = UserGame & {
 export default function GameDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const navigation = useNavigation()
   const [game, setGame] = useState<Game | null>(null)
   const [members, setMembers] = useState<UserGameWithGame[]>([])
   const [words, setWords] = useState<GameWord[]>([])
@@ -58,6 +59,10 @@ export default function GameDetailScreen() {
     if (!id) return
     loadGameDetails()
   }, [loadGameDetails, id])
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: game?.name ?? "Game" })
+  }, [navigation, game?.name])
 
   function renderMember({ item }: { item: UserGameWithGame }) {
     return (

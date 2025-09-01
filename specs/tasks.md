@@ -29,7 +29,7 @@
 - [x] DB helper: `createGameHost({ name, description, durationHours })`
 - [x] DB helper: `findGameByCode(code)` and `joinGameByCode(userId, code)`
 - [x] Create a `JoinGameModal` with a code input
-- [x] Wire `GamesScreen` to list current `user_games` for the user; add Create/Join actions
+- [x] Wire Games list screen to list current `user_games` for the user; add Create/Join actions (reachable from Home)
 - [x] Add `GameDetailScreen` route `src/app/(app)/game/[id].tsx` (members, words, activity)
 - [x] Add optimistic UI update on create/join
 
@@ -45,7 +45,7 @@
 - [ ] Add unit tests for DB helpers (mock supabase client), including `createGameHost` and join by code
 - [ ] Add integration tests for login/signup screens (React Native Testing Library)
 
-_Last updated: 2025-08-23_
+_Last updated: 2025-08-31_
 
 ### Backend / DB Helpers
 
@@ -58,8 +58,8 @@ _Last updated: 2025-08-23_
 
 ### UI Features
 
-- [ ] **Home:** add empty state + featured game resume card.
-- [ ] **Games List:** show join code with Copy/Share, status chip, time remaining.
+- [ ] **Home tab:** top bar + greeting; large “Enter Code” and “Create Game” buttons; conditional “Resume Game” card; link to “View all games.”
+- [ ] **Games List (from Home):** show join code with Copy/Share, status chip, time remaining.
 - [ ] **Game Detail:**
   - Members list w/ names + roles.
   - Host start/end controls + countdown timer.
@@ -69,7 +69,7 @@ _Last updated: 2025-08-23_
 
 - [ ] **Create Game Modal:** post-success sheet w/ code + Copy/Share.
 - [ ] **Join Game Modal:** post-success sheet, clean styles, good error messages.
-- [ ] **Profile:** enable display name editing + persist.
+- [ ] **Profile tab:** enable display name/codename editing + persist; sections for Account, Stats, Achievements, Game History, Settings.
 - [ ] **All Screens:** add toasts, polish empty/error states, remove debug colors.
 
 ### Design References

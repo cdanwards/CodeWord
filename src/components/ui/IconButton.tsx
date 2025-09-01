@@ -13,7 +13,11 @@ export interface IconButtonProps extends PressableProps {
 export function IconButton({ icon, size = 36, style, ...rest }: IconButtonProps) {
   const { themed } = useAppTheme()
   return (
-    <Pressable style={[themed($container(size)), style]} accessibilityRole="button" {...rest}>
+    <Pressable
+      style={[themed($container(size)) as ViewStyle, style as ViewStyle]}
+      accessibilityRole="button"
+      {...rest}
+    >
       <Icon icon={icon} size={20} />
     </Pressable>
   )
