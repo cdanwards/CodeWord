@@ -221,7 +221,7 @@ function ScreenWithScrolling(props: ScreenProps) {
       }}
       style={[$outerStyle, ScrollViewProps?.style, style]}
       contentContainerStyle={[
-        $innerStyle,
+        $scrollInnerStyle,
         ScrollViewProps?.contentContainerStyle,
         contentContainerStyle,
       ]}
@@ -302,6 +302,14 @@ const $justifyFlexEnd: ViewStyle = {
 
 const $innerStyle: ViewStyle = {
   flex: 1,
+  justifyContent: "flex-start",
+  alignItems: "stretch",
+}
+
+// For ScrollView content containers, flexGrow ensures the content area can
+// expand to fill the viewport when content is shorter than the screen.
+const $scrollInnerStyle: ViewStyle = {
+  flexGrow: 1,
   justifyContent: "flex-start",
   alignItems: "stretch",
 }

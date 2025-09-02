@@ -132,6 +132,8 @@ export function HomeScreen() {
 
 const $screen: ViewStyle = {
   flex: 1,
+  flexGrow: 1,
+  backgroundColor: "red",
 }
 
 const $contentContainer: ViewStyle = {

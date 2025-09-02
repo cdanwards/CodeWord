@@ -16,7 +16,7 @@ export function AppHeader({ navigation, back }: NativeStackHeaderProps) {
   return (
     <View>
       <Header
-        rightText={title}
+        title={title}
         backgroundColor={colors.background}
         leftIcon={showBack ? "back" : undefined}
         onLeftPress={showBack ? navigation.goBack : undefined}
