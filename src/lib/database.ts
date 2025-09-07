@@ -1,5 +1,5 @@
-import { supabase } from "../../supabase/database"
 import { withDatabaseFallback } from "./network-utils"
+import { supabase } from "../../supabase/database"
 import type {
   UserProfile,
   Game,
@@ -13,6 +13,10 @@ import type {
   NewAssignment,
   Elimination,
   NewElimination,
+  EliminationConfirmation,
+  NewEliminationConfirmation,
+  GameResult,
+  NewGameResult,
 } from "../../supabase/schema"
 
 // Database helper functions for working with Supabase Auth
@@ -469,6 +473,435 @@ export const db = {
       return data
     } catch (error) {
       console.error("Error in recordElimination:", error)
+      return null
+    }
+  },
+
+  // NEW: Elimination attempt system
+  attemptElimination: async (input: {
+    gameId: number
+    killerUserId: string
+    targetUserId: string
+    notes?: string
+    eliminationMethod?: string
+    targetNotes?: string
+  }): Promise<Elimination | null> => {
+    try {
+      // Get current round number for this game
+      const { data: currentRoundData } = await supabase
+        .from("eliminations")
+        .select("elimination_round")
+        .eq("game_id", input.gameId)
+        .order("elimination_round", { ascending: false })
+        .limit(1)
+
+      const currentRound = currentRoundData?.[0]?.elimination_round || 1
+      const nextRound = currentRound + 1
+
+      // Create the elimination record
+      const elimination: NewElimination = {
+        gameId: input.gameId,
+        killerUserId: input.killerUserId,
+        victimUserId: input.targetUserId,
+        notes: input.notes || null,
+        eliminationMethod: input.eliminationMethod || null,
+        targetNotes: input.targetNotes || null,
+        confirmationRequired: true,
+        confirmationStatus: "pending",
+        eliminationRound: nextRound,
+      }
+
+      const { data: eliminationData, error: eliminationError } = await supabase
+        .from("eliminations")
+        .insert(elimination)
+        .select()
+        .single()
+
+      if (eliminationError) {
+        console.error("Error creating elimination:", eliminationError)
+        return null
+      }
+
+      // Create the confirmation record for the target
+      const confirmation: NewEliminationConfirmation = {
+        eliminationId: eliminationData.id,
+        targetUserId: input.targetUserId,
+      }
+
+      const { error: confirmationError } = await supabase
+        .from("elimination_confirmations")
+        .insert(confirmation)
+
+      if (confirmationError) {
+        console.error("Error creating confirmation:", confirmationError)
+        // Continue anyway - the elimination exists
+      }
+
+      return eliminationData
+    } catch (error) {
+      console.error("Error in attemptElimination:", error)
+      return null
+    }
+  },
+
+  // NEW: Confirm elimination
+  confirmElimination: async (input: {
+    eliminationId: number
+    targetUserId: string
+    confirmed: boolean
+    notes?: string
+    rejectionReason?: string
+  }): Promise<boolean> => {
+    try {
+      // Update the elimination status
+      const eliminationUpdate = {
+        confirmationStatus: input.confirmed ? "confirmed" : "rejected",
+      }
+
+      const { error: eliminationError } = await supabase
+        .from("eliminations")
+        .update(eliminationUpdate)
+        .eq("id", input.eliminationId)
+
+      if (eliminationError) {
+        console.error("Error updating elimination:", eliminationError)
+        return false
+      }
+
+      // Update the confirmation record
+      const confirmationUpdate = {
+        confirmedAt: input.confirmed ? new Date().toISOString() : null,
+        confirmationNotes: input.notes || null,
+        rejectionReason: !input.confirmed ? input.rejectionReason : null,
+        updatedAt: new Date().toISOString(),
+      }
+
+      const { error: confirmationError } = await supabase
+        .from("elimination_confirmations")
+        .update(confirmationUpdate)
+        .eq("elimination_id", input.eliminationId)
+        .eq("target_user_id", input.targetUserId)
+
+      if (confirmationError) {
+        console.error("Error updating confirmation:", confirmationError)
+        return false
+      }
+
+      // If confirmed, mark the target as eliminated
+      if (input.confirmed) {
+        const { error: userGameError } = await supabase
+          .from("user_games")
+          .update({
+            eliminatedAt: new Date().toISOString(),
+            status: "eliminated",
+          })
+          .eq(
+            "game_id",
+            (
+              await supabase
+                .from("eliminations")
+                .select("game_id")
+                .eq("id", input.eliminationId)
+                .single()
+            ).data?.game_id,
+          )
+          .eq("user_id", input.targetUserId)
+
+        if (userGameError) {
+          console.error("Error updating user game status:", userGameError)
+          // Continue anyway - the elimination is confirmed
+        }
+      }
+
+      return true
+    } catch (error) {
+      console.error("Error in confirmElimination:", error)
+      return false
+    }
+  },
+
+  // NEW: Get pending confirmations for a user
+  getPendingConfirmations: async (userId: string): Promise<EliminationConfirmation[]> => {
+    try {
+      const { data, error } = await supabase
+        .from("elimination_confirmations")
+        .select(
+          `
+          *,
+          eliminations (*)
+        `,
+        )
+        .eq("target_user_id", userId)
+        .is("confirmed_at", null)
+        .order("created_at", { ascending: false })
+
+      if (error) {
+        console.error("Error fetching pending confirmations:", error)
+        return []
+      }
+      return data || []
+    } catch (error) {
+      console.error("Error in getPendingConfirmations:", error)
+      return []
+    }
+  },
+
+  // NEW: Get current target for a player
+  getMyTarget: async (gameId: number, userId: string): Promise<UserGame | null> => {
+    try {
+      // Find the current active assignment for this player
+      const { data: assignment, error: assignmentError } = await supabase
+        .from("assignments")
+        .select("*")
+        .eq("game_id", gameId)
+        .eq("assassin_user_id", userId)
+        .eq("status", "active")
+        .order("round", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (assignmentError || !assignment) {
+        return null
+      }
+
+      // Get the target player's game info
+      const { data: targetUserGame, error: targetError } = await supabase
+        .from("user_games")
+        .select(
+          `
+          *,
+          games (*)
+        `,
+        )
+        .eq("game_id", gameId)
+        .eq("user_id", assignment.targetUserId)
+        .eq("status", "active")
+        .single()
+
+      if (targetError || !targetUserGame) {
+        return null
+      }
+
+      return targetUserGame
+    } catch (error) {
+      console.error("Error in getMyTarget:", error)
+      return null
+    }
+  },
+
+  // NEW: Get elimination history for a game with rounds
+  getGameEliminationHistory: async (
+    gameId: number,
+  ): Promise<{
+    eliminations: Elimination[]
+    rounds: { round: number; eliminations: Elimination[] }[]
+  }> => {
+    try {
+      const eliminations = await db.listEliminations(gameId)
+
+      // Group eliminations by round
+      const roundsMap = new Map<number, Elimination>()
+      eliminations.forEach((elimination) => {
+        const round = elimination.eliminationRound || 1
+        if (!roundsMap.has(round)) {
+          roundsMap.set(round, elimination)
+        }
+      })
+
+      const rounds = Array.from(roundsMap.entries())
+        .map(([round, elimination]) => ({
+          round,
+          eliminations: eliminations.filter((e) => e.eliminationRound === round),
+        }))
+        .sort((a, b) => a.round - b.round)
+
+      return {
+        eliminations,
+        rounds,
+      }
+    } catch (error) {
+      console.error("Error in getGameEliminationHistory:", error)
+      return { eliminations: [], rounds: [] }
+    }
+  },
+
+  // NEW: Get current game round
+  getCurrentGameRound: async (gameId: number): Promise<number> => {
+    try {
+      const { data, error } = await supabase
+        .from("eliminations")
+        .select("elimination_round")
+        .eq("game_id", gameId)
+        .order("elimination_round", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error || !data) {
+        return 1 // Default to round 1 if no eliminations yet
+      }
+
+      return data.elimination_round
+    } catch (error) {
+      console.error("Error in getCurrentGameRound:", error)
+      return 1
+    }
+  },
+
+  // NEW: Get active assignments for current round
+  getCurrentRoundAssignments: async (gameId: number): Promise<Assignment[]> => {
+    try {
+      const currentRound = await db.getCurrentGameRound(gameId)
+
+      const { data, error } = await supabase
+        .from("assignments")
+        .select("*")
+        .eq("game_id", gameId)
+        .eq("round", currentRound)
+        .eq("status", "active")
+        .order("created_at", { ascending: true })
+
+      if (error) {
+        console.error("Error fetching current round assignments:", error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error("Error in getCurrentRoundAssignments:", error)
+      return []
+    }
+  },
+
+  // NEW: Start a game
+  startGame: async (gameId: number): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("games")
+        .update({
+          status: "active",
+          startedAt: new Date().toISOString(),
+        })
+        .eq("id", gameId)
+
+      if (error) {
+        console.error("Error starting game:", error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error("Error in startGame:", error)
+      return false
+    }
+  },
+
+  // NEW: End a game
+  endGame: async (gameId: number, reason?: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("games")
+        .update({
+          status: "ended",
+          endedAt: new Date().toISOString(),
+          completionReason: reason || "manual_end",
+        })
+        .eq("id", gameId)
+
+      if (error) {
+        console.error("Error ending game:", error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error("Error in endGame:", error)
+      return false
+    }
+  },
+
+  // NEW: Calculate and store game results
+  calculateGameResults: async (gameId: number): Promise<GameResult | null> => {
+    try {
+      // Get game details
+      const game = await db.getGame(gameId)
+      if (!game) return null
+
+      // Get all eliminations for the game
+      const eliminations = await db.listEliminations(gameId)
+
+      // Get all players and their final status
+      const players = await db.getGameMembers(gameId)
+
+      // Calculate final standings
+      const finalStandings = players
+        .map((player) => ({
+          userId: player.userId,
+          role: player.role,
+          status: player.status,
+          eliminatedAt: player.eliminatedAt,
+          score: player.score || 0,
+        }))
+        .sort((a, b) => {
+          // Survivors first, then by elimination time (earliest eliminated = lower rank)
+          if (a.status === "active" && b.status !== "active") return -1
+          if (a.status !== "active" && b.status === "active") return 1
+          if (a.eliminatedAt && b.eliminatedAt) {
+            return new Date(a.eliminatedAt).getTime() - new Date(b.eliminatedAt).getTime()
+          }
+          return 0
+        })
+
+      // Find winner (last player standing)
+      const winner = players.find((p) => p.status === "active")
+
+      // Calculate game duration
+      const startTime = game.startedAt ? new Date(game.startedAt) : new Date()
+      const endTime = game.endedAt ? new Date(game.endedAt) : new Date()
+      const durationHours = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60))
+
+      const gameResult: NewGameResult = {
+        gameId,
+        winnerUserId: winner?.userId || null,
+        finalStandings: finalStandings as any,
+        gameDurationHours: durationHours,
+        totalEliminations: eliminations.filter((e) => e.confirmationStatus === "confirmed").length,
+        completionReason: game.completionReason || "manual_end",
+      }
+
+      const { data, error } = await supabase
+        .from("game_results")
+        .insert(gameResult)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error creating game result:", error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error("Error in calculateGameResults:", error)
+      return null
+    }
+  },
+
+  // NEW: Get game results
+  getGameResults: async (gameId: number): Promise<GameResult | null> => {
+    try {
+      const { data, error } = await supabase
+        .from("game_results")
+        .select("*")
+        .eq("game_id", gameId)
+        .single()
+
+      if (error) {
+        console.error("Error fetching game results:", error)
+        return null
+      }
+      return data
+    } catch (error) {
+      console.error("Error in getGameResults:", error)
       return null
     }
   },
