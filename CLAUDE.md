@@ -68,8 +68,7 @@ ClaudePlans/        # Implementation plans (preferred location for plans)
 - Migrations in `supabase/migrations/` (numbered SQL files)
 
 ### Auth
-- `src/lib/auth-client.ts` wraps the Supabase client
-- `src/lib/auth.ts` contains auth helper functions
+- `src/lib/auth-client.ts` wraps the Supabase client (sole auth module)
 - Session persisted via MMKV through Zustand
 
 ### Components
@@ -104,6 +103,10 @@ yarn test:watch       # Jest in watch mode
 - Injected via `app.config.ts` into `expo-constants` `extra`
 - Never hardcode secrets in source files
 - Use `app.config.ts` as the source of truth for required environment variables, and keep these names in sync with it
+
+## Out-of-Scope TODOs
+
+Before starting work, check `OUT-OF-SCOPE-TODOS/` for open issues surfaced by prior reviews. If any can be naturally resolved as part of your current task, include the fix and mark the TODO as done. Do not go out of your way to fix unrelated items.
 
 ## Rules
 

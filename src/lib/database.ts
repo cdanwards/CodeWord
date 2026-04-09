@@ -1,5 +1,5 @@
-import { supabase } from "../../supabase/database"
 import { withDatabaseFallback } from "./network-utils"
+import { supabase } from "../../supabase/database"
 import type {
   UserProfile,
   Game,
