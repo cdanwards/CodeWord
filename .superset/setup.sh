@@ -13,14 +13,26 @@ if [ -f "$ROOT/.env" ]; then
 fi
 
 # --- Deps ---
+deps_installed=false
+deps_manager=""
 if [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then
   bun install --frozen-lockfile
+  deps_installed=true
+  deps_manager="bun"
 elif [ -f "package-lock.json" ]; then
   npm ci
+  deps_installed=true
+  deps_manager="npm"
 elif [ -f "yarn.lock" ]; then
   yarn install --frozen-lockfile
+  deps_installed=true
+  deps_manager="yarn"
 fi
-echo "  ✓ deps installed"
+if [ "$deps_installed" = true ]; then
+  echo "  ✓ deps installed ($deps_manager)"
+else
+  echo "  ⚠ no supported lockfile found; skipping dependency install"
+fi
 
 # --- Detect workspace role from name ---
 # Convention: reviewer workspaces are named "review/<builder-branch>"
