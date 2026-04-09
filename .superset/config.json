@@ -1,8 +1,4 @@
 {
-  "setup": [
-    "yarn install",
-    "[ ! -f .env ] && cp .env.example .env"
-  ],
-  "teardown": [],
-  "run": []
+  "setup": ["./.superset/setup.sh"],
+  "teardown": ["./.superset/teardown.sh"]
 }
