@@ -10,6 +10,13 @@ echo "🔧 Setting up workspace: $WORKSPACE"
 if [ -f "$ROOT/.env" ]; then
   cp "$ROOT/.env" .env
   echo "  ✓ .env copied"
+elif [ -f "$ROOT/.env.example" ]; then
+  cp "$ROOT/.env.example" .env
+  echo "  ✓ .env created from .env.example"
+else
+  echo "  ✗ Missing environment configuration: expected $ROOT/.env or $ROOT/.env.example" >&2
+  echo "    app.config.ts relies on SUPABASE_* variables, so workspace setup cannot continue." >&2
+  exit 1
 fi
 
 # --- Deps ---
