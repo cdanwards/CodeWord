@@ -103,3 +103,6 @@ web-build/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Superset adversarial review
+.superset/REVIEW_PROMPT.md
