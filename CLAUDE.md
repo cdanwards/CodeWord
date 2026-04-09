@@ -103,7 +103,7 @@ yarn test:watch       # Jest in watch mode
 - Supabase URL and anon key come from environment variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
 - Injected via `app.config.ts` into `expo-constants` `extra`
 - Never hardcode secrets in source files
-- See `.env.example` for required variables
+- Use `app.config.ts` as the source of truth for required environment variables, and keep these names in sync with it
 
 ## Rules
 
