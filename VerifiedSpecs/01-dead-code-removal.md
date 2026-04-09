@@ -54,17 +54,24 @@ Remove all dead code and legacy artifacts from the Better Auth migration. This r
 
 ## Acceptance Criteria
 
-- [ ] `src/lib/auth.ts` deleted
-- [ ] `llm-helpers/better_auth.md` deleted
-- [ ] `test-auth.js`, `test-db.js`, `test-profile.js`, `test-zustand.js` deleted from project root
-- [ ] `scripts/seed-users.js` deleted
-- [ ] `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` removed from `.env`
-- [ ] `yarn compile` passes (no broken imports)
-- [ ] `yarn test` passes (no test regressions)
-- [ ] No remaining imports of `src/lib/auth.ts` anywhere in the codebase
+- [x] `src/lib/auth.ts` deleted
+- [x] `llm-helpers/better_auth.md` deleted
+- [x] `test-auth.js`, `test-db.js`, `test-profile.js`, `test-zustand.js` deleted from project root
+- [x] `scripts/seed-users.js` deleted
+- [x] `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` removed from `.env` — N/A, no `.env` file exists in repo
+- [x] `yarn compile` passes (no broken imports)
+- [x] `yarn test` passes (no test regressions)
+- [x] No remaining imports of `src/lib/auth.ts` anywhere in the codebase
 
 ---
 
 ## Risks
 
 None. All files being deleted are confirmed unused.
+
+---
+
+## Status: READY FOR REVIEW
+
+**Completed:** 2026-04-09
+**Notes:** All dead code and legacy artifacts removed. No `.env` file exists in the repository (secrets are managed externally), so the Better Auth env var removal was already satisfied. `yarn compile` and `yarn test` pass with zero regressions.
