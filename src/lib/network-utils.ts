@@ -95,7 +95,8 @@ export class NetworkManager {
   }
 
   shouldUseFallback(): boolean {
-    return this.status.isSimulator && !this.status.canReachSupabase
+    // Only trust canReachSupabase when connectivity checks run; otherwise it is never set.
+    return this.checksEnabled && this.status.isSimulator && !this.status.canReachSupabase
   }
 
   async withNetworkFallback<T>(
