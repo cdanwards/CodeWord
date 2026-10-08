@@ -1,108 +1,66 @@
-# Welcome to your new ignited app!
+# Codeword
 
-> The latest and greatest boilerplate for Infinite Red opinions
+A companion app for **Word Assassins**, the party game where you win by getting people to say the wrong word.
 
-This is the boilerplate that [Infinite Red](https://infinite.red) uses as a way to test bleeding-edge changes to our React Native stack.
+Join an operation with a six-character code and you're secretly assigned a target and a set of codewords. Get your target to say any of your words, then file a kill report. If they confirm it, they're out and you take their target and all their codewords. Every day of the operation each agent is issued one more word, and the words get easier as the game goes on. The last agent standing wins.
 
-- [Quick start documentation](https://github.com/infinitered/ignite/blob/master/docs/boilerplate/Boilerplate.md)
-- [Full documentation](https://github.com/infinitered/ignite/blob/master/docs/README.md)
+Built with React Native 0.79 / Expo SDK 53 (Ignite boilerplate) and Supabase, with the game rules running as Postgres functions. The look is a "spy dossier": paper, manila folders and red rubber stamps.
 
-## Getting Started
+## Run it
+
+You need Node 20, Yarn 1, Docker Desktop, the Supabase CLI and Xcode 26.
 
 ```bash
 yarn install
+supabase start            # local backend in Docker; applies all migrations
+```
+
+Create `.env.local` with the URL and anon key that `supabase status` prints:
+
+```
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=<anon key>
+NETWORK_CHECKS_ENABLED=0
+```
+
+Then build the dev client once and start Metro:
+
+```bash
+yarn ios
 yarn start
 ```
 
-To make things work on your local simulator, or on your phone, you need first to [run `eas build`](https://github.com/infinitered/ignite/blob/master/docs/expo/EAS.md). We have many shortcuts on `package.json` to make it easier:
+Full steps and troubleshooting: [docs/development/local-setup.md](docs/development/local-setup.md).
+
+## Play a game by yourself
 
 ```bash
-yarn build:ios:sim # build for ios simulator
-yarn build:ios:dev # build for ios device
-yarn build:ios:prod # build for ios device
+node scripts/agent.mjs alice create "Office Showdown"   # prints a code
+node scripts/agent.mjs bob join <CODE>
+node scripts/agent.mjs priya join <CODE>
 ```
 
-### `./assets` directory
+Sign in as `alice@codeword.test` / `codeword-dev-1`, open the operation and start it. Then act as the others from the terminal, e.g. `node scripts/agent.mjs bob report <CODE>` to see a report land on whoever Bob is hunting.
 
-This directory is designed to organize and store various assets, making it easy for you to manage and use them in your application. The assets are further categorized into subdirectories, including `icons` and `images`:
+## Check it
 
-```tree
-assets
-├── icons
-└── images
+```bash
+yarn compile && yarn lint:check && yarn test
+node scripts/simulate-game.mjs     # plays full games against the local backend and checks every rule
 ```
 
-**icons**
-This is where your icon assets will live. These icons can be used for buttons, navigation elements, or any other UI components. The recommended format for icons is PNG, but other formats can be used as well.
+See the [testing matrix](docs/development/testing-matrix.md).
 
-Ignite comes with a built-in `Icon` component. You can find detailed usage instructions in the [docs](https://github.com/infinitered/ignite/blob/master/docs/boilerplate/app/components/Icon.md).
+## Where things are
 
-**images**
-This is where your images will live, such as background images, logos, or any other graphics. You can use various formats such as PNG, JPEG, or GIF for your images.
+| Looking for | Go to |
+|---|---|
+| How it works, how to work on it | [`docs/`](docs/README.md) |
+| Product requirements and vocabulary | [`specs/`](specs/), especially [`specs/glossary.md`](specs/glossary.md) |
+| Rules for coding agents | [`CLAUDE.md`](CLAUDE.md) |
+| The design | Claude Design project "Codeword — Spy Dossier", mapped in [`docs/development/design-system.md`](docs/development/design-system.md) |
+| Plans and scoped work specs (historical) | `MainPlans/`, `VerifiedSpecs/`, `ClaudePlans/` |
 
-Another valuable built-in component within Ignite is the `AutoImage` component. You can find detailed usage instructions in the [docs](https://github.com/infinitered/ignite/blob/master/docs/Components-AutoImage.md).
+## Status
 
-How to use your `icon` or `image` assets:
-
-```typescript
-import { Image } from 'react-native';
-
-const MyComponent = () => {
-  return (
-    <Image source={require('assets/images/my_image.png')} />
-  );
-};
-```
-
-## Running Maestro end-to-end tests
-
-Follow our [Maestro Setup](https://ignitecookbook.com/docs/recipes/MaestroSetup) recipe.
-
-## Next Steps
-
-### Ignite Cookbook
-
-[Ignite Cookbook](https://ignitecookbook.com/) is an easy way for developers to browse and share code snippets (or “recipes”) that actually work.
-
-### Upgrade Ignite boilerplate
-
-Read our [Upgrade Guide](https://ignitecookbook.com/docs/recipes/UpdatingIgnite) to learn how to upgrade your Ignite project.
-
-## Community
-
-⭐️ Help us out by [starring on GitHub](https://github.com/infinitered/ignite), filing bug reports in [issues](https://github.com/infinitered/ignite/issues) or [ask questions](https://github.com/infinitered/ignite/discussions).
-
-💬 Join us on [Slack](https://join.slack.com/t/infiniteredcommunity/shared_invite/zt-1f137np4h-zPTq_CbaRFUOR_glUFs2UA) to discuss.
-
-📰 Make our Editor-in-chief happy by [reading the React Native Newsletter](https://reactnativenewsletter.com/).
-
-## Project Setup (CodewordApp)
-
-### Supabase Local
-
-- Install Docker Desktop and Supabase CLI
-- Start local stack: `supabase start`
-- Apply local migrations: `supabase db reset --local`
-
-### Migrations
-
-- Migrations live under `supabase/migrations/`
-- Gameplay migrations:
-  - `002_gameplay_extensions.sql`: adds game columns (code/host/status/duration/settings), extends `user_games`, creates `game_words`, `assignments`, `eliminations` + RLS
-  - `003_games_policies.sql`: RLS for hosts to insert/update/delete their own games
-- Push to remote (requires linked project): `supabase db push --linked`
-
-### Seeding a Game (remote)
-
-Set env and run:
-
-```
-SUPABASE_URL='https://<project-ref>.supabase.co' \
-SUPABASE_SERVICE_ROLE_KEY='<service-role-key>' \
-SEED_HOST_EMAIL='you@example.com' \
-SEED_GAME_NAME='Seeded Codeword Game' \
-SEED_WORDS='puzzle,secret,whisper,shadow,signal' \
-node scripts/seed-game.js
-```
-
-This will create a host user (if needed), insert a game, add host membership, and seed words.
+Playable end to end on the iOS simulator against a local backend. Not yet built: push notifications, realtime updates (the game screen polls), a hosted Supabase project, release builds, and an Android pass. The upgrade and cleanup backlog is in [`VerifiedSpecs/00-INDEX.md`](VerifiedSpecs/00-INDEX.md).
