@@ -1,18 +1,60 @@
-import { View, ViewStyle, TextStyle, Alert } from "react-native"
+import { useEffect, useState } from "react"
+import { Alert, Pressable, TextStyle, View, ViewStyle } from "react-native"
 import { router } from "expo-router"
 
-import { Avatar } from "@/components/Avatar"
-import { Button } from "@/components/Button"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { Spacer } from "@/components/ui/Spacer"
+import { AgentPhoto } from "@/components/ui/AgentPhoto"
+import { Rule } from "@/components/ui/Rule"
+import { Sheet } from "@/components/ui/Sheet"
+import { TopBar } from "@/components/ui/TopBar"
+import { db } from "@/lib/database"
 import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
 
+type ServiceRecord = { operations: number; active: number; hosted: number }
+
+/** "86b07292-..." -> "86B0-7292" */
+function agentNumber(userId: string) {
+  const raw = userId.replace(/-/g, "").slice(0, 8).toUpperCase()
+  return `${raw.slice(0, 4)}-${raw.slice(4)}`
+}
+
+/** dd.mm.yyyy */
+function formatSince(value: Date | string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  const dd = String(date.getDate()).padStart(2, "0")
+  const mm = String(date.getMonth() + 1).padStart(2, "0")
+  return `${dd}.${mm}.${date.getFullYear()}`
+}
+
 export function ProfileScreen() {
   const { themed } = useAppTheme()
   const { user, isAuthenticated, signOut, isLoading } = useAuth()
+  const [record, setRecord] = useState<ServiceRecord | null>(null)
+
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    db.getUserGames(userId)
+      .then((games) => {
+        if (cancelled) return
+        setRecord({
+          operations: games.length,
+          active: games.filter((ug) => ug.games?.status === "active").length,
+          hosted: games.filter((ug) => ug.role === "host").length,
+        })
+      })
+      .catch(() => {
+        // Stats stay as dashes.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
 
   const handleSignOut = async () => {
     console.log("[ProfileScreen] handleSignOut")
@@ -32,100 +74,92 @@ export function ProfileScreen() {
   // If not authenticated, show loading or redirect
   if (!isAuthenticated || !user) {
     return (
-      <Screen preset="fixed" style={$screen} contentContainerStyle={$contentContainer}>
-        <Text preset="subheading">Loading profile...</Text>
+      <Screen preset="fixed" safeAreaEdges={["top"]} contentContainerStyle={$loadingContainer}>
+        <Text preset="label" text="Loading personnel file…" />
       </Screen>
     )
   }
 
-  // Generate username from email
-  const getUsername = (email: string) => {
-    return email.split("@")[0]
-  }
+  const since = formatSince(user.createdAt)
+  const stats: { label: string; value: number | undefined; red?: boolean }[] = [
+    { label: "Operations", value: record?.operations },
+    { label: "Active", value: record?.active },
+    { label: "Hosted", value: record?.hosted, red: true },
+  ]
 
   return (
     <Screen
       preset="scroll"
       keyboardShouldPersistTaps="always"
-      safeAreaEdges={["top", "bottom"]}
+      safeAreaEdges={["top"]}
       style={$screen}
       contentContainerStyle={$contentContainer}
     >
-      {/* Profile Header */}
-      <View style={themed($profileHeader)}>
-        <Avatar name={user.name} image={user.image} size={80} />
+      <TopBar
+        left={<Text preset="label" text="Personnel file" />}
+        right={
+          <Pressable
+            onPress={handleEditProfile}
+            disabled={isLoading}
+            hitSlop={12}
+            accessibilityRole="button"
+          >
+            <Text style={themed($link)} text="Edit" />
+          </Pressable>
+        }
+      />
 
-        <Spacer size={16} />
-
-        <Text preset="heading" style={themed($nameText)}>
-          {user.name || "User"}
-        </Text>
-
-        <Text preset="subheading" style={themed($usernameText)}>
-          @{getUsername(user.email)}
-        </Text>
-
-        <Text preset="default" style={themed($emailText)}>
-          {user.email}
-        </Text>
-
-        <View style={themed($verificationStatus)}>
-          <Text preset="formHelper" style={themed($verificationText)}>
-            {user.emailVerified ? "✓ Email Verified" : "⚠ Email Not Verified"}
-          </Text>
+      {/* ID card */}
+      <Sheet style={$card}>
+        <View style={$cardTop}>
+          <AgentPhoto caption="Agent photo" width={96} height={120} />
+          <View style={$cardText}>
+            <Text preset="label" text="Agent" />
+            <Text preset="heading" style={$name} text={user.name || "Agent"} numberOfLines={2} />
+            <View style={$cardMeta}>
+              <Text preset="meta" text={`No. ${agentNumber(user.id)}`} />
+              {!!since && <Text preset="meta" text={`Since ${since}`} />}
+            </View>
+          </View>
         </View>
+        <Rule dashed style={$cardRule} />
+        <Text preset="meta" text={user.email} />
+      </Sheet>
+
+      {/* Service record */}
+      <Text preset="label" style={$sectionLabel} text="Service record" />
+      <View style={themed($stats)}>
+        {stats.map((stat, i) => (
+          <View key={stat.label} style={[$stat, i > 0 && themed($statDivided)]}>
+            <Text
+              preset="heading"
+              style={stat.red ? themed($red) : undefined}
+              text={stat.value === undefined ? "–" : String(stat.value)}
+            />
+            <Text preset="label" text={stat.label} />
+          </View>
+        ))}
       </View>
 
-      <Spacer size={32} />
-
-      {/* Profile Actions */}
-      <View style={themed($actionsContainer)}>
-        <Button
-          text="Edit Profile"
-          style={themed($actionButton)}
-          onPress={handleEditProfile}
-          disabled={isLoading}
-        />
-
-        <Spacer size={12} />
-
-        <Button
-          text="Settings"
-          style={themed($secondaryButton)}
+      {/* Actions */}
+      <View style={$list}>
+        <Pressable
           onPress={handleSettings}
           disabled={isLoading}
-        />
-
-        <Spacer size={12} />
-
-        <Button text="Sign Out" style={themed($signOutButton)} onPress={handleSignOut} />
-      </View>
-
-      <Spacer size={24} />
-
-      {/* Account Info */}
-      <View style={themed($accountInfoContainer)}>
-        <Text preset="subheading" style={themed($sectionTitle)}>
-          Account Information
-        </Text>
-
-        <View style={themed($infoRow)}>
-          <Text preset="default" style={themed($infoLabel)}>
-            Member since:
-          </Text>
-          <Text preset="default" style={themed($infoValue)}>
-            {new Date(user.createdAt).toLocaleDateString()}
-          </Text>
-        </View>
-
-        <View style={themed($infoRow)}>
-          <Text preset="default" style={themed($infoLabel)}>
-            Last updated:
-          </Text>
-          <Text preset="default" style={themed($infoValue)}>
-            {new Date(user.updatedAt).toLocaleDateString()}
-          </Text>
-        </View>
+          accessibilityRole="button"
+          style={({ pressed }) => [$row, pressed && $pressed]}
+        >
+          <Text preset="copy" style={[themed($ink), $rowLabel]} text="Settings" />
+          <Text preset="mono" text="→" />
+        </Pressable>
+        <Rule />
+        <Pressable
+          onPress={handleSignOut}
+          accessibilityRole="button"
+          style={({ pressed }) => [$row, pressed && $pressed]}
+        >
+          <Text preset="copy" style={[themed($red), $rowLabel]} text="Sign out" />
+        </Pressable>
       </View>
     </Screen>
   )
@@ -136,99 +170,97 @@ const $screen: ViewStyle = {
 }
 
 const $contentContainer: ViewStyle = {
-  // paddingHorizontal: 24,
+  paddingHorizontal: 22,
+  paddingTop: 8,
+  paddingBottom: 24,
 }
 
-const $profileHeader: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  alignItems: "center",
-  paddingTop: spacing.lg,
+const $loadingContainer: ViewStyle = {
+  paddingHorizontal: 22,
+  justifyContent: "center",
+}
+
+const $link: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.mono.medium,
+  fontSize: 13,
+  lineHeight: 16,
+  letterSpacing: 0.8,
+  color: colors.red,
 })
 
-const $nameText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  textAlign: "center",
-  marginBottom: 4,
-})
+const $card: ViewStyle = {
+  marginTop: 16,
+}
 
-const $usernameText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  opacity: 0.7,
-  textAlign: "center",
-  marginBottom: 8,
-})
-
-const $emailText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  opacity: 0.6,
-  textAlign: "center",
-  marginBottom: 12,
-})
-
-const $verificationStatus: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  paddingHorizontal: spacing.md,
-  paddingVertical: spacing.xs,
-  borderRadius: 12,
-  backgroundColor: "rgba(0, 0, 0, 0.05)",
-})
-
-const $verificationText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  opacity: 0.8,
-  textAlign: "center",
-})
-
-const $actionsContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  width: "100%",
-  paddingHorizontal: spacing.md,
-})
-
-const $actionButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  backgroundColor: colors.palette.primary500,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $secondaryButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  backgroundColor: colors.background,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $signOutButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  backgroundColor: colors.error,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $accountInfoContainer: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  width: "100%",
-  paddingHorizontal: spacing.md,
-  backgroundColor: colors.background,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-})
-
-const $sectionTitle: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
-  color: colors.text,
-  marginBottom: spacing.md,
-})
-
-const $infoRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $cardTop: ViewStyle = {
   flexDirection: "row",
-  justifyContent: "space-between",
+  gap: 16,
+}
+
+const $cardText: ViewStyle = {
+  flex: 1,
+  minWidth: 0,
+}
+
+const $name: TextStyle = {
+  fontSize: 38,
+  lineHeight: 37,
+  marginTop: 6,
+}
+
+const $cardMeta: ViewStyle = {
+  marginTop: "auto",
+  paddingTop: 8,
+}
+
+const $cardRule: ViewStyle = {
+  marginTop: 16,
+  marginBottom: 12,
+}
+
+const $sectionLabel: TextStyle = {
+  marginTop: 28,
+}
+
+const $stats: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  flexDirection: "row",
+  marginTop: 12,
+  borderTopWidth: 1.5,
+  borderTopColor: colors.ink,
+  borderBottomWidth: 1,
+  borderBottomColor: colors.rule,
+})
+
+const $stat: ViewStyle = {
+  flex: 1,
+  gap: 4,
+  paddingVertical: 14,
+}
+
+const $statDivided: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  paddingLeft: 14,
+  borderLeftWidth: 1,
+  borderLeftColor: colors.rule,
+})
+
+const $red: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.red })
+const $ink: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.ink })
+
+const $list: ViewStyle = {
+  marginTop: 20,
+}
+
+const $row: ViewStyle = {
+  flexDirection: "row",
   alignItems: "center",
-  paddingVertical: spacing.xs,
-})
+  gap: 12,
+  minHeight: 56,
+}
 
-const $infoLabel: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  opacity: 0.7,
-})
+const $rowLabel: TextStyle = {
+  flex: 1,
+}
 
-const $infoValue: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  fontWeight: "500",
-})
+const $pressed: ViewStyle = {
+  opacity: 0.6,
+}

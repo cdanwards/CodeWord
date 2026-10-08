@@ -1,4 +1,4 @@
-import { View, ViewStyle } from "react-native"
+import { Pressable, StyleProp, TextStyle, ViewStyle } from "react-native"
 
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
@@ -7,47 +7,82 @@ import { Text } from "../Text"
 
 export interface ChipProps {
   label: string
-  tone?: "neutral" | "info" | "success" | "warning"
+  /**
+   * Filled with ink, e.g. the active filter.
+   */
+  selected?: boolean
+  /**
+   * Dashed outline for an "add" affordance.
+   */
+  dashed?: boolean
+  small?: boolean
+  onPress?: () => void
+  style?: StyleProp<ViewStyle>
 }
 
-export function Chip({ label, tone = "neutral" }: ChipProps) {
+/**
+ * A mono uppercase tag: filters, codewords, and small actions like Copy and Share.
+ */
+export function Chip({ label, selected, dashed, small, onPress, style }: ChipProps) {
   const { themed } = useAppTheme()
   return (
-    <View style={themed($container(tone))} accessibilityRole="text">
-      <Text preset="meta" style={themed($text(tone))}>
-        {label}
-      </Text>
-    </View>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? "button" : "text"}
+      accessibilityState={onPress ? { selected: !!selected } : undefined}
+      style={({ pressed }) => [
+        themed($chip),
+        small && $small,
+        selected && themed($selected),
+        dashed && themed($dashed),
+        pressed && { opacity: 0.7 },
+        style,
+      ]}
+    >
+      <Text
+        style={[
+          themed($label),
+          small && $smallLabel,
+          selected && themed($selectedLabel),
+          dashed && themed($dashedLabel),
+        ]}
+        text={label}
+      />
+    </Pressable>
   )
 }
 
-const $container: (t: NonNullable<ChipProps["tone"]>) => ThemedStyle<ViewStyle> =
-  (t) =>
-  ({ colors, spacing, radii, borderWidth }) => {
-    const map = {
-      neutral: { bg: colors.palette.neutral200, border: colors.separator },
-      info: { bg: colors.infoBackground, border: colors.info },
-      success: { bg: colors.successBackground, border: colors.success },
-      warning: { bg: colors.warningBackground, border: colors.warning },
-    } as const
-    return {
-      paddingVertical: spacing.xxxs,
-      paddingHorizontal: spacing.xs,
-      borderRadius: radii.md,
-      backgroundColor: map[t].bg,
-      borderWidth: borderWidth.thin,
-      borderColor: map[t].border,
-    }
-  }
+const $chip: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  height: 32,
+  paddingHorizontal: 12,
+  alignSelf: "flex-start",
+  justifyContent: "center",
+  borderWidth: 1.5,
+  borderColor: colors.ink,
+  borderRadius: 3,
+})
 
-const $text: (t: NonNullable<ChipProps["tone"]>) => ThemedStyle<any> =
-  (t) =>
-  ({ colors }) => {
-    const map = {
-      neutral: colors.textDim,
-      info: colors.info,
-      success: colors.success,
-      warning: colors.warning,
-    } as const
-    return { color: map[t] }
-  }
+const $small: ViewStyle = { height: 30, paddingHorizontal: 10 }
+
+const $selected: ThemedStyle<ViewStyle> = ({ colors }) => ({ backgroundColor: colors.ink })
+
+const $dashed: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  borderStyle: "dashed",
+  borderColor: colors.ink3,
+})
+
+const $label: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.mono.medium,
+  fontSize: 12,
+  lineHeight: 15,
+  letterSpacing: 1.2,
+  textTransform: "uppercase",
+  color: colors.ink,
+})
+
+const $smallLabel: TextStyle = { fontSize: 11 }
+
+const $selectedLabel: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.paper })
+
+const $dashedLabel: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.ink2 })

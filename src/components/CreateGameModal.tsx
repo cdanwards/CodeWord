@@ -1,17 +1,34 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { View } from "react-native"
+import { useEffect, useRef, useState } from "react"
+import { Pressable, TextStyle, View, ViewStyle } from "react-native"
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetModal as BottomSheetModalType,
-  BottomSheetView,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Button } from "@/components/Button"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
-import { Spacer } from "@/components/ui/Spacer"
+import { Segmented, SegmentedOption } from "@/components/ui/Segmented"
+import { SheetTextInput } from "@/components/ui/SheetTextInput"
 import { db } from "@/lib/database"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
+
+const DEFAULT_DURATION_HOURS = 72
+
+const DURATION_OPTIONS: SegmentedOption<number>[] = [
+  { label: "24h", value: 24 },
+  { label: "48h", value: 48 },
+  { label: "72h", value: 72 },
+  { label: "1 week", value: 168 },
+]
+
+function errorMessage(e: unknown) {
+  return e && typeof e === "object" && "message" in e ? String(e.message) : ""
+}
 
 interface CreateGameModalProps {
   visible: boolean
@@ -20,20 +37,21 @@ interface CreateGameModalProps {
 }
 
 export function CreateGameModal({ visible, onClose, onCreated }: CreateGameModalProps) {
+  const { themed } = useAppTheme()
+  const insets = useSafeAreaInsets()
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
-  const [duration, setDuration] = useState("72")
+  const [durationHours, setDurationHours] = useState(DEFAULT_DURATION_HOURS)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const sheetRef = useRef<BottomSheetModalType>(null)
-  const snapPoints = useMemo(() => ["65%"], [])
 
   // Reset form when modal closes
   const resetForm = () => {
     setName("")
     setDescription("")
-    setDuration("72")
+    setDurationHours(DEFAULT_DURATION_HOURS)
     setError(null)
   }
 
@@ -58,7 +76,7 @@ export function CreateGameModal({ visible, onClose, onCreated }: CreateGameModal
       console.log("[CreateGameModal] handleCreate start", {
         name: name.trim(),
         description: description.trim(),
-        duration,
+        durationHours,
       })
       const currentUserId = await db.getCurrentUserId()
       if (!currentUserId) {
@@ -66,7 +84,6 @@ export function CreateGameModal({ visible, onClose, onCreated }: CreateGameModal
         console.warn("[CreateGameModal] No authenticated user")
         return
       }
-      const durationHours = Number(duration) || 72
       if (!name.trim()) {
         setError("Name is required")
         console.warn("[CreateGameModal] Missing name input")
@@ -90,9 +107,9 @@ export function CreateGameModal({ visible, onClose, onCreated }: CreateGameModal
       onCreated?.(game.id as number)
       sheetRef.current?.dismiss()
       resetForm()
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[CreateGameModal] handleCreate error", e)
-      setError(e?.message || "An error occurred")
+      setError(errorMessage(e) || "An error occurred")
     } finally {
       setSubmitting(false)
     }
@@ -104,98 +121,131 @@ export function CreateGameModal({ visible, onClose, onCreated }: CreateGameModal
       index={0}
       enablePanDownToClose
       onDismiss={handleDismiss}
-      snapPoints={snapPoints}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       backdropComponent={(props) => (
         <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
       )}
-      handleIndicatorStyle={$handleIndicator}
+      backgroundStyle={themed($sheetBackground)}
+      handleIndicatorStyle={themed($handleIndicator)}
+      // Taller than the space above the keyboard: stop below the status bar and scroll.
+      topInset={insets.top}
     >
-      <BottomSheetView style={$sheet}>
-        <View style={$content}>
-          <Text preset="heading" text="Create Game" />
-          <Spacer size={20} />
+      <BottomSheetScrollView contentContainerStyle={$sheet} keyboardShouldPersistTaps="handled">
+        <View style={$headerRow}>
+          <Pressable
+            onPress={() => sheetRef.current?.dismiss()}
+            disabled={submitting}
+            hitSlop={14}
+            accessibilityRole="button"
+          >
+            <Text style={themed($cancelLink)} text="Cancel" />
+          </Pressable>
+          <Text preset="label" text="New file" />
+        </View>
 
+        <Text preset="display" text="Open an operation" style={$title} />
+
+        <View style={$fields}>
           <TextField
-            label="Name"
-            placeholder="Enter game name"
+            label="Operation name"
             value={name}
             onChangeText={setName}
             autoFocus
+            InputComponent={SheetTextInput}
           />
-          <Spacer size={16} />
 
           <TextField
-            label="Description"
-            placeholder="Optional: Describe your game"
+            label="Briefing · optional"
             value={description}
             onChangeText={setDescription}
             multiline
             numberOfLines={3}
-          />
-          <Spacer size={16} />
-
-          <TextField
-            label="Duration (hours)"
-            placeholder="72"
-            keyboardType="number-pad"
-            value={duration}
-            onChangeText={setDuration}
+            InputComponent={SheetTextInput}
           />
 
-          <Spacer size={16} />
-          {!!error && <Text preset="formHelper" text={error} style={$errorText} />}
-          <Spacer size={16} />
-
-          <View style={$row}>
-            <Button
-              text="Cancel"
-              onPress={() => sheetRef.current?.dismiss()}
-              disabled={submitting}
-              style={$btnLeft}
-            />
-            <Button
-              text="Create"
-              onPress={handleCreate}
-              disabled={submitting || !name.trim()}
-              style={$btnRight}
+          <View style={$durationField}>
+            <Text preset="label" text="Duration" />
+            <Segmented
+              options={DURATION_OPTIONS}
+              value={durationHours}
+              onChange={setDurationHours}
             />
           </View>
         </View>
-      </BottomSheetView>
+
+        <View style={$footer}>
+          {!!error && <Text preset="meta" text={error} style={themed($errorText)} />}
+          <Text
+            preset="meta"
+            text="You’re the host. We’ll issue a six-character file number to share with your agents."
+          />
+          <Button
+            preset="filled"
+            text={submitting ? "Issuing…" : "Issue file number"}
+            onPress={handleCreate}
+            disabled={submitting || !name.trim()}
+          />
+        </View>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   )
 }
 
-const $sheet = {
-  flex: 1,
-  paddingBottom: 64,
-}
+const $sheetBackground: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.paper,
+  borderTopLeftRadius: 22,
+  borderTopRightRadius: 22,
+})
 
-const $content = {
-  padding: 16,
-  flex: 1,
-}
-
-const $handleIndicator = {
+const $handleIndicator: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.ruleStrong,
   width: 40,
-  height: 4,
-  borderRadius: 2,
+  height: 5,
+  borderRadius: 3,
+})
+
+// Content-sized (dynamic sizing), so no flex: 1 here.
+const $sheet: ViewStyle = {
+  paddingHorizontal: 22,
+  paddingBottom: 34,
 }
 
-const $row = {
-  flexDirection: "row" as const,
+const $headerRow: ViewStyle = {
+  height: 44,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
 }
 
-const $btnLeft = {
-  flex: 1,
-  marginRight: 8,
+const $cancelLink: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.mono.medium,
+  fontSize: 13,
+  lineHeight: 16,
+  letterSpacing: 0.8,
+  color: colors.red,
+})
+
+const $title: TextStyle = {
+  marginTop: 10,
 }
 
-const $btnRight = {
-  flex: 1,
-  marginLeft: 8,
+const $fields: ViewStyle = {
+  gap: 24,
+  marginTop: 26,
 }
 
-const $errorText = {
-  color: "#D32F2F",
+const $durationField: ViewStyle = {
+  gap: 8,
 }
+
+const $footer: ViewStyle = {
+  gap: 16,
+  marginTop: "auto",
+  paddingTop: 24,
+}
+
+const $errorText: ThemedStyle<TextStyle> = ({ colors }) => ({
+  color: colors.red,
+})

@@ -1,4 +1,5 @@
 import { Share } from "react-native"
+import * as Clipboard from "expo-clipboard"
 
 export async function shareCode(code: string) {
   try {
@@ -8,15 +9,11 @@ export async function shareCode(code: string) {
   }
 }
 
+/** Copies text to the clipboard (native and web). Returns whether it worked. */
 export async function copyToClipboard(text: string) {
   try {
-    // Web support
-    if (typeof navigator !== "undefined" && (navigator as any).clipboard?.writeText) {
-      await (navigator as any).clipboard.writeText(text)
-      return true
-    }
+    return await Clipboard.setStringAsync(text)
   } catch {
-    // ignore
+    return false
   }
-  return false
 }

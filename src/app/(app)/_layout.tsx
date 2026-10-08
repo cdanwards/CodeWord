@@ -1,12 +1,13 @@
 import { ActivityIndicator } from "react-native"
 import { Redirect, Stack } from "expo-router"
 
-import { AppHeader } from "@/components/AppHeader"
 import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
 
 export default function AppLayout() {
-  const { themed } = useAppTheme()
+  const {
+    theme: { colors },
+  } = useAppTheme()
   const { isAuthenticated, isLoading } = useAuth()
 
   console.log("[(app) layout]", { isLoading, isAuthenticated })
@@ -14,12 +15,8 @@ export default function AppLayout() {
   // Prefer rendering app if already authenticated, even while loading
   if (isAuthenticated) {
     return (
-      <Stack
-        screenOptions={{
-          header: (props) => <AppHeader {...props} />,
-          headerShown: true,
-        }}
-      />
+      // Screens draw their own dossier TopBar.
+      <Stack screenOptions={{ headerShown: false }} />
     )
   }
 
@@ -27,8 +24,11 @@ export default function AppLayout() {
     return (
       <ActivityIndicator
         size="large"
-        color={themed({ colors: { primary: "red" } }).colors.primary}
+        color={colors.red}
+        style={[$spinner, { backgroundColor: colors.paper }]}
       />
     )
   return <Redirect href="/(auth)/login" />
 }
+
+const $spinner = { flex: 1 }

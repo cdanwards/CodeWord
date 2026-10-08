@@ -1,43 +1,34 @@
 import { useState } from "react"
-import {
-  View,
-  ViewStyle,
-  TextStyle,
-  ImageStyle,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Image,
-} from "react-native"
+import { Alert, Pressable, TextStyle, View, ViewStyle } from "react-native"
 import { router } from "expo-router"
 
 import { Button } from "@/components/Button"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TextField } from "@/components/TextField"
+import { Rule } from "@/components/ui/Rule"
+import { Stamp } from "@/components/ui/Stamp"
 import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
-import { $styles } from "@/theme/styles"
 import type { ThemedStyle } from "@/theme/types"
-import { useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
 
-const logoImage = require("@assets/images/logo.png")
-
+/**
+ * 01 Sign in: the classified cover sheet. The only night screen outside an active mission.
+ */
 export const LoginScreen = function LoginScreen() {
-  const { themed } = useAppTheme()
+  const { themed, theme } = useAppTheme()
   const { signIn, isLoading, clearError } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-
-  const $bottomContainerInsets = useSafeAreaInsetsStyle(["bottom"])
+  const [formError, setFormError] = useState<string | null>(null)
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields")
+      setFormError("Please fill in all fields")
       return
     }
 
+    setFormError(null)
     clearError()
     const result = await signIn(email, password)
 
@@ -45,7 +36,7 @@ export const LoginScreen = function LoginScreen() {
       // Navigate directly to the home tab
       router.replace("/(app)/(tabs)/home")
     } else if (result.error) {
-      Alert.alert("Error", result.error)
+      setFormError(result.error)
     }
   }
 
@@ -53,158 +44,181 @@ export const LoginScreen = function LoginScreen() {
     Alert.alert("Forgot Password", "Password reset functionality coming soon!")
   }
 
+  const onChangeEmail = (value: string) => {
+    setEmail(value)
+    if (formError) setFormError(null)
+  }
+
+  const onChangePassword = (value: string) => {
+    setPassword(value)
+    if (formError) setFormError(null)
+  }
+
   return (
-    <Screen safeAreaEdges={["top", "bottom"]} preset="fixed" contentContainerStyle={$styles.flex1}>
-      <KeyboardAvoidingView
-        style={$styles.flex1}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          contentContainerStyle={$styles.flex1}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <View style={themed($headerContainer)}>
-            <Image style={themed($logo)} source={logoImage} resizeMode="contain" />
-            <Text style={themed($title)} text="Welcome Back!" preset="heading" />
-            <Text
-              style={themed($subtitle)}
-              text="Sign in to continue to your account"
-              preset="subheading"
-            />
-          </View>
+    <Screen
+      preset="scroll"
+      safeAreaEdges={["top", "bottom"]}
+      backgroundColor={theme.colors.night}
+      systemBarStyle="light"
+      contentContainerStyle={themed($content)}
+      ScrollViewProps={{ showsVerticalScrollIndicator: false }}
+    >
+      {/* File header */}
+      <View style={themed($fileRow)}>
+        <Text preset="label" style={themed($onNight2)} text="Dept. of Word Assassins" />
+        <Text preset="label" style={themed($onNight2)} text="File 00-A" />
+      </View>
+      <Rule night style={themed($fileRule)} />
 
-          {/* Login Form */}
-          <View style={themed($formContainer)}>
-            <TextField
-              value={email}
-              onChangeText={setEmail}
-              containerStyle={themed($inputContainer)}
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect={false}
-              keyboardType="email-address"
-              label="Email"
-              placeholder="Enter your email"
-            />
+      {/* Cover */}
+      <View style={themed($cover)}>
+        <Text preset="display" style={themed($wordmark)} text={"Code\nword"} />
+        <Stamp text="Top secret" rotate={-9} style={themed($stamp)} />
+        <Text
+          preset="copy"
+          style={themed([$onNight2, $tagline])}
+          text="Get your target to say the word. Don't say yours."
+        />
+      </View>
 
-            <TextField
-              value={password}
-              onChangeText={setPassword}
-              containerStyle={themed($inputContainer)}
-              autoCapitalize="none"
-              autoComplete="password"
-              autoCorrect={false}
-              secureTextEntry={true}
-              label="Password"
-              placeholder="Enter your password"
-            />
+      {/* Sign-in form, pushed to the bottom */}
+      <View style={themed($form)}>
+        <TextField
+          tone="night"
+          value={email}
+          onChangeText={onChangeEmail}
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect={false}
+          keyboardType="email-address"
+          label="Agent email"
+          placeholder="you@agency.com"
+        />
 
-            <Button
-              text="Forgot Password?"
-              preset="reversed"
-              style={themed($forgotPasswordButton)}
-              textStyle={themed($forgotPasswordText)}
+        <View>
+          <View style={themed($labelRow)}>
+            <Text preset="formLabel" style={themed($onNight2)} text="Passphrase" />
+            <Pressable
               onPress={handleForgotPassword}
-            />
-
-            <Button
-              text="Sign In"
-              style={themed($signInButton)}
-              textStyle={themed($signInButtonText)}
-              onPress={handleLogin}
-              disabled={isLoading}
-            />
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Forgot passphrase?"
+            >
+              <Text style={themed($link)} text="Forgot?" />
+            </Pressable>
           </View>
+          <TextField
+            tone="night"
+            value={password}
+            onChangeText={onChangePassword}
+            autoCapitalize="none"
+            autoComplete="password"
+            autoCorrect={false}
+            secureTextEntry={true}
+            accessibilityLabel="Passphrase"
+          />
+        </View>
 
-          {/* Footer */}
-          <View style={themed([$footerContainer, $bottomContainerInsets])}>
-            <Text style={themed($footerText)} text="Don't have an account? " />
-            <Text
-              style={themed($footerLink)}
-              text="Sign up"
-              onPress={() => router.push("signup" as any)}
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {!!formError && (
+          <Text
+            preset="meta"
+            style={themed($errorLine)}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
+            <Text preset="meta" style={themed($errorMark)} text="× " />
+            {formError}
+          </Text>
+        )}
+
+        <Button
+          preset="primary"
+          text="Sign in"
+          style={themed($submit)}
+          onPress={handleLogin}
+          disabled={isLoading}
+        />
+
+        <Text preset="meta" style={themed([$onNight2, $footer])}>
+          New recruit?{" "}
+          <Text
+            style={themed($link)}
+            text="Enlist →"
+            accessibilityRole="link"
+            onPress={() => router.push("/signup")}
+          />
+        </Text>
+      </View>
     </Screen>
   )
 }
 
-const $headerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  alignItems: "center",
-  paddingHorizontal: spacing.lg,
-  paddingTop: spacing.xl,
-  paddingBottom: spacing.lg,
+const $content: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  paddingHorizontal: 22,
+  paddingTop: spacing.xs,
+  paddingBottom: spacing.md,
 })
 
-const $logo: ThemedStyle<ImageStyle> = ({ spacing }) => ({
-  height: 60,
-  width: 120,
-  marginBottom: spacing.lg,
-})
+const $onNight2: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.onNight2 })
 
-const $title: ThemedStyle<TextStyle> = ({ spacing }) => ({
-  marginBottom: spacing.xs,
-  textAlign: "center",
-})
-
-const $subtitle: ThemedStyle<TextStyle> = ({ colors }) => ({
-  textAlign: "center",
-  color: colors.text,
-  opacity: 0.7,
-})
-
-const $formContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flex: 1,
-  paddingHorizontal: spacing.lg,
-  paddingTop: spacing.lg,
-})
-
-const $inputContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginBottom: spacing.md,
-})
-
-const $forgotPasswordButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  alignSelf: "flex-end",
-  marginBottom: spacing.lg,
-  minHeight: 0,
-  paddingVertical: 0,
-})
-
-const $forgotPasswordText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.palette.primary500,
-  fontSize: 14,
-})
-
-const $signInButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  marginBottom: spacing.lg,
-  backgroundColor: colors.palette.primary500,
-  borderRadius: 12,
-  paddingVertical: spacing.md,
-})
-
-const $signInButtonText: ThemedStyle<TextStyle> = () => ({
-  fontSize: 16,
-  fontWeight: "600",
-})
-
-const $footerContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+const $fileRow: ThemedStyle<ViewStyle> = () => ({
   flexDirection: "row",
-  justifyContent: "center",
+  justifyContent: "space-between",
   alignItems: "center",
-  paddingHorizontal: spacing.lg,
-  paddingBottom: spacing.lg,
+  paddingTop: 18,
+  gap: 12,
 })
 
-const $footerText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.text,
-  opacity: 0.7,
+const $fileRule: ThemedStyle<ViewStyle> = ({ spacing }) => ({ marginTop: spacing.sm })
+
+const $cover: ThemedStyle<ViewStyle> = () => ({
+  position: "relative",
+  paddingTop: 40,
 })
 
-const $footerLink: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.palette.primary500,
-  fontWeight: "600",
+const $wordmark: ThemedStyle<TextStyle> = ({ colors }) => ({
+  color: colors.onNight,
+  fontSize: 100,
+  lineHeight: 96,
 })
+
+// Hand-applied over the right edge of the wordmark, across the two lines.
+const $stamp: ThemedStyle<ViewStyle> = () => ({
+  position: "absolute",
+  right: 6,
+  top: 120,
+})
+
+const $tagline: ThemedStyle<TextStyle> = () => ({
+  marginTop: 18,
+  maxWidth: 280,
+})
+
+const $form: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  marginTop: "auto",
+  paddingTop: spacing.xl,
+  gap: spacing.lg,
+})
+
+const $labelRow: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: spacing.xs,
+})
+
+const $link: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.mono.medium,
+  fontSize: 13,
+  lineHeight: 18,
+  letterSpacing: 0.8,
+  color: colors.red,
+})
+
+const $errorLine: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.onNight })
+
+const $errorMark: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.red })
+
+const $submit: ThemedStyle<ViewStyle> = () => ({ marginTop: 6 })
+
+const $footer: ThemedStyle<TextStyle> = () => ({ textAlign: "center" })

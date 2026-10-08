@@ -1,8 +1,6 @@
 import { useState } from "react"
-import { StyleProp, ViewStyle, TextStyle } from "react-native"
+import { Pressable, StyleProp, TextStyle, ViewStyle } from "react-native"
 
-import { Button } from "@/components/Button"
-import type { ButtonAccessoryProps } from "@/components/Button"
 import { CreateGameModal } from "@/components/CreateGameModal"
 import { Text } from "@/components/Text"
 import { useAppTheme } from "@/theme/context"
@@ -14,9 +12,12 @@ export interface CreateGameButtonProps {
   style?: StyleProp<ViewStyle>
 }
 
+/**
+ * The ink "New operation" tile on HQ. Opens the create sheet.
+ */
 export function CreateGameButton({
   onCreated,
-  label = "Create New Game",
+  label = "New operation",
   style,
 }: CreateGameButtonProps) {
   const [visible, setVisible] = useState(false)
@@ -24,17 +25,15 @@ export function CreateGameButton({
 
   return (
     <>
-      <Button
-        preset="reversed"
-        text={label}
+      <Pressable
         onPress={() => setVisible(true)}
-        style={[themed($button), style]}
-        LeftAccessory={({ style: accessoryStyle }: ButtonAccessoryProps) => (
-          <Text size="xl" weight="medium" style={[themed($plusText), accessoryStyle]}>
-            +
-          </Text>
-        )}
-      />
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={({ pressed }) => [themed($tile), style, pressed && $pressed]}
+      >
+        <Text preset="label" style={themed($kicker)} text="Host" />
+        <Text preset="subheading" style={themed($title)} text={label} />
+      </Pressable>
       <CreateGameModal
         visible={visible}
         onClose={() => setVisible(false)}
@@ -47,11 +46,18 @@ export function CreateGameButton({
   )
 }
 
-const $button: ThemedStyle<ViewStyle> = () => ({
-  width: "100%",
-  borderRadius: 8,
+const $tile: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  flex: 1,
+  height: 112,
+  padding: 14,
+  justifyContent: "space-between",
+  borderWidth: 1.5,
+  borderColor: colors.ink,
+  borderRadius: 6,
+  backgroundColor: colors.ink,
 })
-const $plusText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.palette.neutral100,
-  paddingRight: 12,
-})
+
+const $pressed: ViewStyle = { opacity: 0.85 }
+
+const $kicker: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.ink3 })
+const $title: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.paper })

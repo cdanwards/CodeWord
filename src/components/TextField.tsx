@@ -1,4 +1,12 @@
-import { ComponentType, forwardRef, Ref, useImperativeHandle, useRef } from "react"
+import {
+  ComponentType,
+  ElementType,
+  forwardRef,
+  Ref,
+  RefAttributes,
+  useImperativeHandle,
+  useRef,
+} from "react"
 import {
   ImageStyle,
   StyleProp,
@@ -102,6 +110,14 @@ export interface TextFieldProps extends Omit<TextInputProps, "ref"> {
    * Note: It is a good idea to memoize this.
    */
   LeftAccessory?: ComponentType<TextFieldAccessoryProps>
+  /**
+   * "night" for fields on a dark surface (the sign-in cover). Defaults to "paper".
+   */
+  tone?: "paper" | "night"
+  /**
+   * Render a different input, e.g. `BottomSheetTextInput` so a bottom sheet can track the keyboard.
+   */
+  InputComponent?: ElementType<TextInputProps & RefAttributes<TextInput>>
 }
 
 /**
@@ -129,6 +145,8 @@ export const TextField = forwardRef(function TextField(props: TextFieldProps, re
     style: $inputStyleOverride,
     containerStyle: $containerStyleOverride,
     inputWrapperStyle: $inputWrapperStyleOverride,
+    tone = "paper",
+    InputComponent = TextInput,
     ...TextInputProps
   } = props
   const input = useRef<TextInput>(null)
@@ -146,13 +164,16 @@ export const TextField = forwardRef(function TextField(props: TextFieldProps, re
 
   const $containerStyles = [$containerStyleOverride]
 
-  const $labelStyles = [$labelStyle, LabelTextProps?.style]
+  const night = tone === "night"
+
+  const $labelStyles = [$labelStyle, night && { color: colors.onNight2 }, LabelTextProps?.style]
 
   const $inputWrapperStyles = [
     $styles.row,
     $inputWrapperStyle,
+    TextInputProps.multiline && $areaWrapperStyle,
+    night && { borderColor: colors.onNight },
     status === "error" && { borderColor: colors.error },
-    TextInputProps.multiline && { minHeight: 112 },
     LeftAccessory && { paddingStart: 0 },
     RightAccessory && { paddingEnd: 0 },
     $inputWrapperStyleOverride,
@@ -160,6 +181,8 @@ export const TextField = forwardRef(function TextField(props: TextFieldProps, re
 
   const $inputStyles: ThemedStyleArray<TextStyle> = [
     $inputStyle,
+    night && { color: colors.onNight },
+    TextInputProps.multiline && $areaInputStyle,
     disabled && { color: colors.textDim },
     isRTL && { textAlign: "right" as TextStyle["textAlign"] },
     TextInputProps.multiline && { height: "auto" },
@@ -211,12 +234,12 @@ export const TextField = forwardRef(function TextField(props: TextFieldProps, re
           />
         )}
 
-        <TextInput
+        <InputComponent
           ref={input}
           underlineColorAndroid={colors.transparent}
           textAlignVertical="top"
           placeholder={placeholderContent}
-          placeholderTextColor={colors.textDim}
+          placeholderTextColor={night ? colors.palette.neutral500 : colors.ink3}
           {...TextInputProps}
           editable={!disabled}
           style={themed($inputStyles)}
@@ -250,27 +273,42 @@ const $labelStyle: ThemedStyle<TextStyle> = ({ spacing }) => ({
   marginBottom: spacing.xs,
 })
 
+// A ruled form line: underline only, like a field on a paper form.
 const $inputWrapperStyle: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  alignItems: "flex-start",
-  borderWidth: 1,
-  borderRadius: 4,
-  backgroundColor: colors.palette.neutral200,
-  borderColor: colors.palette.neutral400,
+  alignItems: "center",
+  minHeight: 48,
+  borderBottomWidth: 1.5,
+  borderColor: colors.ink,
+  backgroundColor: colors.transparent,
   overflow: "hidden",
 })
 
-const $inputStyle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
+// Multiline fields become a boxed area.
+const $areaWrapperStyle: ViewStyle = {
+  alignItems: "flex-start",
+  minHeight: 92,
+  borderWidth: 1.5,
+  borderRadius: 4,
+}
+
+const $inputStyle: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
   flex: 1,
   alignSelf: "stretch",
-  fontFamily: typography.primary.normal,
-  color: colors.text,
-  fontSize: 16,
+  fontFamily: typography.mono.normal,
+  color: colors.ink,
+  fontSize: 17,
   height: 24,
   // https://github.com/facebook/react-native/issues/21720#issuecomment-532642093
   paddingVertical: 0,
   paddingHorizontal: 0,
-  marginVertical: spacing.xs,
-  marginHorizontal: spacing.sm,
+  marginVertical: 12,
+})
+
+const $areaInputStyle: ThemedStyle<TextStyle> = ({ typography }) => ({
+  fontFamily: typography.primary.normal,
+  fontSize: 15,
+  lineHeight: 22,
+  marginHorizontal: 14,
 })
 
 const $helperStyle: ThemedStyle<TextStyle> = ({ spacing }) => ({

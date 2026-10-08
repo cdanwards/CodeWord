@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
+import { useFonts } from "expo-font"
 import { SplashScreen, Slot } from "expo-router"
-import { useFonts } from "@expo-google-fonts/space-grotesk"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
