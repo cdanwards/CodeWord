@@ -11,7 +11,19 @@ import { typography } from "@/theme/typography"
 
 type Sizes = keyof typeof $sizeStyles
 type Weights = keyof typeof typography.primary
-type Presets = "default" | "bold" | "heading" | "subheading" | "formLabel" | "formHelper"
+type Presets =
+  | "default"
+  | "bold"
+  | "display"
+  | "heading"
+  | "title"
+  | "subheading"
+  | "copy"
+  | "label"
+  | "meta"
+  | "mono"
+  | "formLabel"
+  | "formHelper"
 
 export interface TextProps extends RNTextProps {
   /**
@@ -94,23 +106,52 @@ const $fontWeightStyles = Object.entries(typography.primary).reduce((acc, [weigh
 }, {}) as Record<Weights, TextStyle>
 
 const $baseStyle: ThemedStyle<TextStyle> = (theme) => ({
-  ...$sizeStyles.sm,
+  fontSize: 15,
+  lineHeight: 22,
   ...$fontWeightStyles.normal,
   color: theme.colors.text,
 })
 
+// Condensed uppercase headline. lineHeight sits just above fontSize: tight like the design's
+// 0.9 leading, without clipping caps on iOS.
+const $display = (fontSize: number): TextStyle => ({
+  fontFamily: typography.display.extraBold,
+  fontSize,
+  lineHeight: Math.round(fontSize * 0.98),
+  textTransform: "uppercase",
+})
+
+const $label: ThemedStyle<TextStyle> = (theme) => ({
+  fontFamily: typography.mono.medium,
+  fontSize: 11,
+  lineHeight: 15,
+  letterSpacing: 1.5,
+  textTransform: "uppercase",
+  color: theme.colors.ink2,
+})
+
+const $copy: ThemedStyle<TextStyle> = (theme) => ({ color: theme.colors.ink2 })
+
 const $presets: Record<Presets, ThemedStyleArray<TextStyle>> = {
   default: [$baseStyle],
   bold: [$baseStyle, { ...$fontWeightStyles.bold }],
-  heading: [
+  display: [$baseStyle, $display(58)],
+  heading: [$baseStyle, $display(46)],
+  title: [$baseStyle, $display(30)],
+  subheading: [$baseStyle, $display(23)],
+  copy: [$baseStyle, $copy],
+  label: [$baseStyle, $label],
+  meta: [
     $baseStyle,
-    {
-      ...$sizeStyles.xxl,
-      ...$fontWeightStyles.bold,
-    },
+    (theme) => ({
+      fontFamily: typography.mono.normal,
+      fontSize: 13,
+      lineHeight: 18,
+      color: theme.colors.ink2,
+    }),
   ],
-  subheading: [$baseStyle, { ...$sizeStyles.lg, ...$fontWeightStyles.medium }],
-  formLabel: [$baseStyle, { ...$fontWeightStyles.medium }],
-  formHelper: [$baseStyle, { ...$sizeStyles.sm, ...$fontWeightStyles.normal }],
+  mono: [$baseStyle, { fontFamily: typography.mono.normal }],
+  formLabel: [$baseStyle, $label],
+  formHelper: [$baseStyle, $copy],
 }
 const $rtlStyle: TextStyle = isRTL ? { writingDirection: "rtl" } : {}

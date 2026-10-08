@@ -1,53 +1,54 @@
-// TODO: write documentation about fonts and typography along with guides on how to add custom fonts in own
-// markdown file and add links from here
+// Codeword "spy dossier" type system (see the Claude Design project "Codeword — Spy Dossier").
+// - display: Barlow Condensed, uppercase headlines, buttons and stamps
+// - primary: Archivo, body copy
+// - mono: IBM Plex Mono, file labels, metadata, codes
 
-import { Platform } from "react-native"
 import {
-  SpaceGrotesk_300Light as spaceGroteskLight,
-  SpaceGrotesk_400Regular as spaceGroteskRegular,
-  SpaceGrotesk_500Medium as spaceGroteskMedium,
-  SpaceGrotesk_600SemiBold as spaceGroteskSemiBold,
-  SpaceGrotesk_700Bold as spaceGroteskBold,
-} from "@expo-google-fonts/space-grotesk"
+  Archivo_400Regular as archivoRegular,
+  Archivo_500Medium as archivoMedium,
+  Archivo_600SemiBold as archivoSemiBold,
+  Archivo_700Bold as archivoBold,
+} from "@expo-google-fonts/archivo"
+import {
+  BarlowCondensed_600SemiBold as barlowCondensedSemiBold,
+  BarlowCondensed_700Bold as barlowCondensedBold,
+  BarlowCondensed_800ExtraBold as barlowCondensedExtraBold,
+} from "@expo-google-fonts/barlow-condensed"
+import {
+  IBMPlexMono_400Regular as plexMonoRegular,
+  IBMPlexMono_500Medium as plexMonoMedium,
+  IBMPlexMono_600SemiBold as plexMonoSemiBold,
+} from "@expo-google-fonts/ibm-plex-mono"
 
 export const customFontsToLoad = {
-  spaceGroteskLight,
-  spaceGroteskRegular,
-  spaceGroteskMedium,
-  spaceGroteskSemiBold,
-  spaceGroteskBold,
+  archivoRegular,
+  archivoMedium,
+  archivoSemiBold,
+  archivoBold,
+  barlowCondensedSemiBold,
+  barlowCondensedBold,
+  barlowCondensedExtraBold,
+  plexMonoRegular,
+  plexMonoMedium,
+  plexMonoSemiBold,
 }
 
 const fonts = {
-  spaceGrotesk: {
-    // Cross-platform Google font.
-    light: "spaceGroteskLight",
-    normal: "spaceGroteskRegular",
-    medium: "spaceGroteskMedium",
-    semiBold: "spaceGroteskSemiBold",
-    bold: "spaceGroteskBold",
+  archivo: {
+    normal: "archivoRegular",
+    medium: "archivoMedium",
+    semiBold: "archivoSemiBold",
+    bold: "archivoBold",
   },
-  helveticaNeue: {
-    // iOS only font.
-    thin: "HelveticaNeue-Thin",
-    light: "HelveticaNeue-Light",
-    normal: "Helvetica Neue",
-    medium: "HelveticaNeue-Medium",
+  barlowCondensed: {
+    semiBold: "barlowCondensedSemiBold",
+    bold: "barlowCondensedBold",
+    extraBold: "barlowCondensedExtraBold",
   },
-  courier: {
-    // iOS only font.
-    normal: "Courier",
-  },
-  sansSerif: {
-    // Android only font.
-    thin: "sans-serif-thin",
-    light: "sans-serif-light",
-    normal: "sans-serif",
-    medium: "sans-serif-medium",
-  },
-  monospace: {
-    // Android only font.
-    normal: "monospace",
+  plexMono: {
+    normal: "plexMonoRegular",
+    medium: "plexMonoMedium",
+    semiBold: "plexMonoSemiBold",
   },
 }
 
@@ -57,15 +58,15 @@ export const typography = {
    */
   fonts,
   /**
-   * The primary font. Used in most places.
+   * Body copy.
    */
-  primary: fonts.spaceGrotesk,
+  primary: fonts.archivo,
   /**
-   * An alternate font used for perhaps titles and stuff.
+   * Condensed uppercase display face: headlines, buttons, stamps.
    */
-  secondary: Platform.select({ ios: fonts.helveticaNeue, android: fonts.sansSerif }),
+  display: fonts.barlowCondensed,
   /**
-   * Lets get fancy with a monospace font!
+   * File labels, metadata and codes.
    */
-  code: Platform.select({ ios: fonts.courier, android: fonts.monospace }),
+  mono: fonts.plexMono,
 }

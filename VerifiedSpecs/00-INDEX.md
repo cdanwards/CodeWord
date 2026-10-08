@@ -1,5 +1,7 @@
 # VerifiedSpecs Index
 
+> **Status 2026-10-08:** done: 01 (dead code), 06 (debug colors removed; lobby roster shows player names), 23, 25, 26, 27, 28 (documentation now lives in `docs/`). The game engine work in `ClaudePlans/game-engine-rpc.md` superseded the elimination-related parts of 15–16 and 20. Everything else is still open; check the code before starting any spec.
+
 35 specs broken out from the unified initial plan and the post-unified repo advancement plan. Each is self-contained and sized for a single subagent.
 
 ## Dependency Graph

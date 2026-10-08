@@ -14,7 +14,7 @@ import type { ThemedStyle, ThemedStyleArray } from "@/theme/types"
 
 import { Text, TextProps } from "./Text"
 
-type Presets = "default" | "filled" | "reversed"
+type Presets = "default" | "filled" | "reversed" | "primary" | "danger" | "paper" | "ghostNight"
 
 export interface ButtonAccessoryProps {
   style: StyleProp<any>
@@ -130,7 +130,7 @@ export function Button(props: ButtonProps) {
       themed($viewPresets[preset]),
       $viewStyleOverride,
       !!pressed && themed([$pressedViewPresets[preset], $pressedViewStyleOverride]),
-      !!disabled && $disabledViewStyleOverride,
+      !!disabled && [$disabledViewStyle, $disabledViewStyleOverride],
     ]
   }
   /**
@@ -178,20 +178,24 @@ export function Button(props: ButtonProps) {
   )
 }
 
-const $baseViewStyle: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  minHeight: 56,
-  borderRadius: 4,
+const $baseViewStyle: ThemedStyle<ViewStyle> = ({ spacing, radii, size }) => ({
+  minHeight: size.controlHeight,
+  borderRadius: radii.sm,
   justifyContent: "center",
   alignItems: "center",
   paddingVertical: spacing.sm,
-  paddingHorizontal: spacing.sm,
+  paddingHorizontal: spacing.md,
   overflow: "hidden",
 })
 
-const $baseTextStyle: ThemedStyle<TextStyle> = ({ typography }) => ({
-  fontSize: 16,
-  lineHeight: 20,
-  fontFamily: typography.primary.medium,
+// Condensed uppercase label, like a stamped form button.
+const $baseTextStyle: ThemedStyle<TextStyle> = ({ typography, colors }) => ({
+  fontSize: 21,
+  lineHeight: 24,
+  fontFamily: typography.display.extraBold,
+  letterSpacing: 0.8,
+  textTransform: "uppercase",
+  color: colors.ink,
   textAlign: "center",
   flexShrink: 1,
   flexGrow: 0,
@@ -207,42 +211,58 @@ const $leftAccessoryStyle: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   zIndex: 1,
 })
 
+const $solid =
+  (key: "ink" | "red" | "paper"): ThemedStyle<ViewStyle> =>
+  ({ colors }) => ({ backgroundColor: colors[key] })
+
+const $outline =
+  (key: "ink" | "red" | "onNight"): ThemedStyle<ViewStyle> =>
+  ({ colors }) => ({
+    borderWidth: 1.5,
+    borderColor: colors[key],
+    backgroundColor: colors.transparent,
+  })
+
 const $viewPresets: Record<Presets, ThemedStyleArray<ViewStyle>> = {
-  default: [
-    $styles.row,
-    $baseViewStyle,
-    ({ colors }) => ({
-      borderWidth: 1,
-      borderColor: colors.palette.neutral400,
-      backgroundColor: colors.palette.neutral100,
-    }),
-  ],
-  filled: [
-    $styles.row,
-    $baseViewStyle,
-    ({ colors }) => ({ backgroundColor: colors.palette.neutral300 }),
-  ],
-  reversed: [
-    $styles.row,
-    $baseViewStyle,
-    ({ colors }) => ({ backgroundColor: colors.palette.neutral800 }),
-  ],
+  default: [$styles.row, $baseViewStyle, $outline("ink")],
+  filled: [$styles.row, $baseViewStyle, $solid("ink")],
+  reversed: [$styles.row, $baseViewStyle, $solid("ink")],
+  primary: [$styles.row, $baseViewStyle, $solid("red")],
+  danger: [$styles.row, $baseViewStyle, $outline("red")],
+  paper: [$styles.row, $baseViewStyle, $solid("paper")],
+  ghostNight: [$styles.row, $baseViewStyle, $outline("onNight")],
 }
+
+const $onDark: ThemedStyle<TextStyle> = ({ colors }) => ({ color: colors.paper })
 
 const $textPresets: Record<Presets, ThemedStyleArray<TextStyle>> = {
   default: [$baseTextStyle],
-  filled: [$baseTextStyle],
-  reversed: [$baseTextStyle, ({ colors }) => ({ color: colors.palette.neutral100 })],
+  filled: [$baseTextStyle, $onDark],
+  reversed: [$baseTextStyle, $onDark],
+  primary: [$baseTextStyle, $onDark],
+  danger: [$baseTextStyle, ({ colors }) => ({ color: colors.red })],
+  paper: [$baseTextStyle],
+  ghostNight: [$baseTextStyle, ({ colors }) => ({ color: colors.onNight })],
 }
 
 const $pressedViewPresets: Record<Presets, ThemedStyle<ViewStyle>> = {
-  default: ({ colors }) => ({ backgroundColor: colors.palette.neutral200 }),
-  filled: ({ colors }) => ({ backgroundColor: colors.palette.neutral400 }),
+  default: ({ colors }) => ({ backgroundColor: colors.paper2 }),
+  filled: ({ colors }) => ({ backgroundColor: colors.palette.neutral700 }),
   reversed: ({ colors }) => ({ backgroundColor: colors.palette.neutral700 }),
+  primary: ({ colors }) => ({ backgroundColor: colors.palette.primary600 }),
+  danger: ({ colors }) => ({ backgroundColor: colors.redWash }),
+  paper: ({ colors }) => ({ backgroundColor: colors.paper2 }),
+  ghostNight: ({ colors }) => ({ backgroundColor: colors.night2 }),
 }
 
 const $pressedTextPresets: Record<Presets, ThemedStyle<TextStyle>> = {
   default: () => ({ opacity: 0.9 }),
   filled: () => ({ opacity: 0.9 }),
   reversed: () => ({ opacity: 0.9 }),
+  primary: () => ({ opacity: 0.9 }),
+  danger: () => ({ opacity: 0.9 }),
+  paper: () => ({ opacity: 0.9 }),
+  ghostNight: () => ({ opacity: 0.9 }),
 }
+
+const $disabledViewStyle: ViewStyle = { opacity: 0.45 }

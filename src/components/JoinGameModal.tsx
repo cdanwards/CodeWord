@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { View } from "react-native"
+import { useEffect, useRef, useState } from "react"
+import { Pressable, TextStyle, View, ViewStyle } from "react-native"
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -9,9 +9,17 @@ import {
 
 import { Button } from "@/components/Button"
 import { Text } from "@/components/Text"
-import { TextField } from "@/components/TextField"
-import { Spacer } from "@/components/ui/Spacer"
+import { CodeBoxes } from "@/components/ui/CodeBoxes"
+import { SheetTextInput } from "@/components/ui/SheetTextInput"
 import { db } from "@/lib/database"
+import { useAppTheme } from "@/theme/context"
+import type { ThemedStyle } from "@/theme/types"
+
+const CODE_LENGTH = 6
+
+function errorMessage(e: unknown) {
+  return e && typeof e === "object" && "message" in e ? String(e.message) : ""
+}
 
 interface JoinGameModalProps {
   visible: boolean
@@ -20,12 +28,12 @@ interface JoinGameModalProps {
 }
 
 export function JoinGameModal({ visible, onClose, onJoined }: JoinGameModalProps) {
+  const { themed } = useAppTheme()
   const [code, setCode] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const sheetRef = useRef<BottomSheetModalType>(null)
-  const snapPoints = useMemo(() => ["50%"], [])
 
   // Reset form when modal closes
   const resetForm = () => {
@@ -87,12 +95,14 @@ export function JoinGameModal({ visible, onClose, onJoined }: JoinGameModalProps
       onJoined?.(game.id as number)
       sheetRef.current?.dismiss()
       resetForm()
-    } catch (e: any) {
-      setError(e?.message || "An error occurred")
+    } catch (e: unknown) {
+      setError(errorMessage(e) || "An error occurred")
     } finally {
       setSubmitting(false)
     }
   }
+
+  const canSubmit = !submitting && code.trim().length === CODE_LENGTH
 
   return (
     <BottomSheetModal
@@ -100,83 +110,112 @@ export function JoinGameModal({ visible, onClose, onJoined }: JoinGameModalProps
       index={0}
       enablePanDownToClose
       onDismiss={handleDismiss}
-      snapPoints={snapPoints}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       backdropComponent={(props) => (
         <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
       )}
-      handleIndicatorStyle={$handleIndicator}
+      backgroundStyle={themed($sheetBackground)}
+      handleIndicatorStyle={themed($handleIndicator)}
     >
       <BottomSheetView style={$sheet}>
-        <View style={$content}>
-          <Text preset="heading" text="Join Game" />
-          <Spacer size={20} />
-
-          <TextField
-            label="Game Code"
-            placeholder="Enter 6-character code"
-            value={code}
-            onChangeText={(text) => setCode(text.toUpperCase())}
-            autoCapitalize="characters"
-            maxLength={6}
-            autoFocus
-          />
-
-          <Spacer size={16} />
-          {!!error && <Text preset="formHelper" text={error} style={$errorText} />}
-          <Spacer size={16} />
-
-          <View style={$row}>
-            <Button
-              text="Cancel"
-              onPress={() => sheetRef.current?.dismiss()}
-              disabled={submitting}
-              style={$btnLeft}
-            />
-            <Button
-              text="Join"
-              onPress={handleJoin}
-              disabled={submitting || !code.trim()}
-              style={$btnRight}
-            />
-          </View>
+        <View style={$headerRow}>
+          <Text preset="label" text="Incoming transmission" />
+          <Pressable
+            onPress={() => sheetRef.current?.dismiss()}
+            disabled={submitting}
+            hitSlop={14}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Text style={themed($closeMark)} text="×" />
+          </Pressable>
         </View>
+
+        <Text preset="display" text="Enter the code" style={$title} />
+        <Text preset="copy" text="Six characters. Your host has it." style={$intro} />
+
+        <View style={$codeBoxes}>
+          <CodeBoxes
+            value={code}
+            onChangeText={setCode}
+            length={CODE_LENGTH}
+            autoFocus
+            onSubmit={canSubmit ? handleJoin : undefined}
+            InputComponent={SheetTextInput}
+          />
+        </View>
+
+        <Text preset="meta" text="No O, 0, I or 1. Codes never use them." style={$hint} />
+        {!!error && <Text preset="meta" text={error} style={themed($errorText)} />}
+
+        <Button
+          preset="primary"
+          text={submitting ? "Decrypting…" : "Decrypt & join"}
+          onPress={handleJoin}
+          disabled={!canSubmit}
+          style={$submit}
+        />
       </BottomSheetView>
     </BottomSheetModal>
   )
 }
 
-const $sheet = {
-  backgroundColor: "#FF00FF", // Bright magenta background
-  flex: 1,
-}
+const $sheetBackground: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.paper,
+  borderTopLeftRadius: 22,
+  borderTopRightRadius: 22,
+})
 
-const $content = {
-  padding: 16,
-  flex: 1,
-  backgroundColor: "#00FFFF", // Bright cyan background
-}
-
-const $handleIndicator = {
-  backgroundColor: "#E0E0E0",
+const $handleIndicator: ThemedStyle<ViewStyle> = ({ colors }) => ({
+  backgroundColor: colors.ruleStrong,
   width: 40,
-  height: 4,
-  borderRadius: 2,
+  height: 5,
+  borderRadius: 3,
+})
+
+// Content-sized (dynamic sizing), so no flex: 1 here.
+const $sheet: ViewStyle = {
+  paddingHorizontal: 22,
+  paddingBottom: 34,
 }
 
-const $row = {
-  flexDirection: "row" as const,
+const $headerRow: ViewStyle = {
+  height: 44,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
 }
 
-const $btnLeft = {
-  flex: 1,
-  marginRight: 8,
+const $closeMark: ThemedStyle<TextStyle> = ({ colors, typography }) => ({
+  fontFamily: typography.mono.medium,
+  fontSize: 22,
+  lineHeight: 26,
+  color: colors.ink,
+})
+
+const $title: TextStyle = {
+  marginTop: 10,
 }
 
-const $btnRight = {
-  flex: 1,
-  marginLeft: 8,
+const $intro: TextStyle = {
+  marginTop: 10,
 }
 
-const $errorText = {
-  color: "#D32F2F",
+const $codeBoxes: ViewStyle = {
+  marginTop: 28,
+}
+
+const $hint: TextStyle = {
+  marginTop: 14,
+}
+
+const $errorText: ThemedStyle<TextStyle> = ({ colors }) => ({
+  marginTop: 8,
+  color: colors.red,
+})
+
+const $submit: ViewStyle = {
+  marginTop: 24,
 }

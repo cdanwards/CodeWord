@@ -12,11 +12,16 @@ Status (current)
 
 - Authentication via Supabase: email/password sign up, sign in, sign out
 - Route protection: unauthenticated users see auth screens only; authenticated users see app tabs only
-- Profile: view basic account info; ensure a profile row exists on first sign-in
+- Tabs reduced to two: Home and Profile
+- Home tab (MVP):
+  - Prominent actions to Enter Code and Create Game
+  - If a game is active, show a Resume Game card
+  - Optional link to view All Games (navigates to a non-tab stack screen)
+- Profile tab (MVP): view basic account info; ensure a profile row exists on first sign-in
 - Games (MVP):
   - Create a game (host) with name/description/duration → generates a code
   - Join a game by code
-  - View my games list and navigate to a game detail screen
+  - View my games list (as a screen reachable from Home) and navigate to a game detail screen
 - Internationalization and theming: continue working as-is
 - Basic error handling and loading states
 
@@ -59,3 +64,94 @@ Status (current)
 - Password reset and email verification flows
 - In-game real-time features (live assignments/eliminations)
 - Analytics and monitoring
+
+# 📄 `specs/requirements.md`
+
+_Last updated: 2025-08-31_
+
+## MVP Acceptance Criteria
+
+### Home tab
+
+- [ ] Top bar shows app name “Codeword” and a personalized greeting.
+- [ ] Prominent buttons for “Enter Code” and “Create Game.”
+- [ ] If a game is active, a card displays the game title and status with a “Resume Game” CTA.
+- [ ] Optional: link to “View all games” that navigates to a non-tab Games screen.
+- [ ] Empty state for first-time users highlights Enter Code.
+
+### Games (screen reachable from Home)
+
+- [ ] User sees all their games with name, description, status, role, and code.
+- [ ] Copy/share code works from the list.
+- [ ] Status chip correct for lobby/active/ended.
+- [ ] Active games show time remaining.
+- [ ] Tapping navigates to `/game/[id]`.
+
+### Game Detail
+
+- [ ] Members list shows **display name + role** (not game name).
+- [ ] Host can **start/end game**.
+- [ ] All players see **countdown timer**.
+- [ ] Each player sees **“Your Target”** (or placeholder if not assigned).
+- [ ] Eliminations list shows **killer, target, word, timestamp**.
+- [ ] Players can **leave lobby**.
+- [ ] Host can **delete game** before active.
+- [ ] Empty-state messaging for members, words, eliminations.
+- [ ] Words listed per game (auto-seed or host-managed).
+
+### Create Game
+
+- [ ] After create, user sees **confirmation with join code**, Copy + Share.
+- [ ] Optional: auto-seed default word set.
+
+### Join Game
+
+- [ ] After join, success sheet shows: **“Joined GameName”**, Copy + Share code, “Go to Game.”
+- [ ] Good error states for invalid code, already joined.
+- [ ] Debug styles removed.
+
+### Profile tab
+
+- [ ] Header shows avatar (editable), display name/codename, and a short tagline like “Agent since [date].”
+
+- Account
+  - [ ] Username / codename is editable and persists.
+  - [ ] Email shown (from Supabase); not editable here.
+  - [ ] Change password and Sign out actions available (password may deep-link to Supabase flow).
+
+- Stats
+  - [ ] Total games played displayed.
+  - [ ] Eliminations achieved displayed.
+  - [ ] Survival streak (longest without elimination) displayed.
+  - [ ] Words successfully used displayed.
+  - [ ] Win count displayed (if applicable to ruleset).
+
+- Achievements / Badges
+  - [ ] Achievements list with simple icons and tooltips (e.g., “Silent Assassin,” “Wordsmith,” “Agent Veteran”).
+
+- Game History
+  - [ ] List of completed games with game name, completion date, and placement/eliminations.
+
+- Settings
+  - [ ] Theme toggle (light/dark, e.g., “Espionage Mode”).
+  - [ ] Notification preferences (game updates, eliminations).
+  - [ ] Privacy options (visibility of stats/achievements to other players).
+
+### Cross-Cutting
+
+- [ ] Toasts for success, inline text for errors.
+- [ ] Empty states for Home, Games, Game Detail sections.
+- [ ] Copy/share helpers wherever a code appears.
+- [ ] Pull-to-refresh (or refetch on focus) acceptable in place of realtime.
+
+### Ending the game
+
+- [ ] When the end time is reached, the game is ended and the host can see the results.
+- [ ] The Status should be updated to "Ended"
+- [ ] Players should no longer be able to interact with other players.
+- [ ] The host should be able to see the results of the game.
+- [ ] The players should be able to see the results of the game.
+
+## Game concept (for onboarding copy)
+
+Codeword is a game where agents eliminate other agents by getting them to say a specific word in conversation. When the target says the word, they are eliminated, and the hitperson receives the eliminated player’s target as their new target. The Home tab introduces this concept and lets users start or resume a game quickly.

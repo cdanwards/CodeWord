@@ -12,13 +12,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { checkAuth, setUser, setSession } = useAuth()
 
   useEffect(() => {
-    // Check authentication status when the app starts
-    checkAuth()
+    // Check authentication status when the app starts with timeout guard
+    let cancelled = false
+    const run = async () => {
+      const timeout = setTimeout(() => {
+        if (!cancelled) {
+          // Ensure loading does not hang if getSession stalls
+          try {
+            // Force store to stop loading by calling checkAuth which resets loading in finally
+            checkAuth()
+          } catch {}
+        }
+      }, 4500)
+      try {
+        await checkAuth()
+      } finally {
+        clearTimeout(timeout)
+      }
+    }
+    run()
 
     // Listen for auth state changes from Supabase
     const {
       data: { subscription },
-    } = authClient.onAuthStateChange(async (event, session) => {
+    } = authClient.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session?.user?.id)
 
       if (event === "SIGNED_IN" && session?.user) {
@@ -41,15 +58,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           expiresAt: new Date(session.expires_at! * 1000),
         })
 
-        // Ensure a user profile exists in the database
-        try {
-          await db.ensureUserProfile(session.user.id, {
-            email: session.user.email || undefined,
-            name: user.name,
-          })
-        } catch (e) {
-          console.warn("ensureUserProfile failed", e)
-        }
+        // Ensure a user profile exists in the database. Deferred because Supabase holds its
+        // auth lock while this callback runs, and awaiting a query here deadlocks every later
+        // getSession call.
+        const userId = session.user.id
+        const email = session.user.email || undefined
+        setTimeout(() => {
+          db.ensureUserProfile(userId, { email, name: user.name }).catch((e) =>
+            console.warn("ensureUserProfile failed", e),
+          )
+        }, 0)
       } else if (event === "SIGNED_OUT") {
         setUser(null)
         setSession(null)
@@ -58,6 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Cleanup subscription on unmount
     return () => {
+      cancelled = true
       subscription.unsubscribe()
     }
   }, [checkAuth, setUser, setSession])

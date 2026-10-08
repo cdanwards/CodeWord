@@ -1,212 +1,83 @@
-import { useCallback, useEffect, useState } from "react"
-import { View, FlatList } from "react-native"
-import { useLocalSearchParams, useRouter } from "expo-router"
+import { useCallback, useState } from "react"
+import { View, ViewStyle } from "react-native"
+import { useFocusEffect, useLocalSearchParams } from "expo-router"
 
-import { Button } from "@/components/Button"
+import { DebriefView } from "@/components/game/DebriefView"
+import { EliminatedView } from "@/components/game/EliminatedView"
+import { IncomingReportView } from "@/components/game/IncomingReportView"
+import { LobbyView } from "@/components/game/LobbyView"
+import { MissionView } from "@/components/game/MissionView"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { Spacer } from "@/components/ui/Spacer"
+import { TopBar } from "@/components/ui/TopBar"
 import { db } from "@/lib/database"
 
-import type { Game, UserGame, GameWord } from "../../../../supabase/schema"
+import type { Board, Mission } from "../../../../supabase/schema"
 
-type UserGameWithGame = UserGame & {
-  games: Game
-}
+// Other agents' moves (a report against you, a new target) arrive by polling while the screen
+// is focused.
+const POLL_MS = 8000
 
-export default function GameDetailScreen() {
+/**
+ * One operation. Which view shows depends on the game and on you:
+ * lobby → LobbyView; over → DebriefView; you're out → EliminatedView;
+ * a report against you → IncomingReportView; otherwise → MissionView.
+ */
+export default function GameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const router = useRouter()
-  const [game, setGame] = useState<Game | null>(null)
-  const [members, setMembers] = useState<UserGameWithGame[]>([])
-  const [words, setWords] = useState<GameWord[]>([])
-  const [loading, setLoading] = useState(true)
+  const gameId = Number(id)
+  const [mission, setMission] = useState<Mission | null>(null)
+  const [board, setBoard] = useState<Board | null>(null)
+  const [failed, setFailed] = useState(false)
 
-  const loadGameDetails = useCallback(async () => {
-    if (!id) return
-
-    try {
-      const gameId = parseInt(id, 10)
-      if (isNaN(gameId)) {
-        console.error("Invalid game ID:", id)
-        return
-      }
-
-      // Load game details
-      const gameData = await db.getGame(gameId)
-      if (!gameData) {
-        console.error("Game not found:", gameId)
-        return
-      }
-      setGame(gameData)
-
-      // Load game members
-      const gameMembers = await db.getGameMembers(gameId)
-      setMembers(gameMembers as UserGameWithGame[])
-
-      // Load game words
-      const gameWords = await db.listGameWords(gameId)
-      setWords(gameWords)
-    } catch (error) {
-      console.error("Error loading game details:", error)
-    } finally {
-      setLoading(false)
+  const refresh = useCallback(async () => {
+    if (!Number.isFinite(gameId)) {
+      setFailed(true)
+      return
     }
-  }, [id])
+    const [nextMission, nextBoard] = await Promise.all([db.getMission(gameId), db.getBoard(gameId)])
+    if (!nextMission || !nextBoard) {
+      setFailed(true)
+      return
+    }
+    setFailed(false)
+    setMission(nextMission)
+    setBoard(nextBoard)
+  }, [gameId])
 
-  useEffect(() => {
-    if (!id) return
-    loadGameDetails()
-  }, [loadGameDetails, id])
-
-  function renderMember({ item }: { item: UserGameWithGame }) {
-    return (
-      <View style={$memberItem}>
-        <Text preset="default" text={item.games.name} />
-        <Text preset="formHelper" text={`Role: ${item.role}`} style={$memberRole} />
-      </View>
-    )
-  }
-
-  function renderWord({ item }: { item: GameWord }) {
-    return (
-      <View style={$wordItem}>
-        <Text preset="default" text={item.word} />
-        <Text preset="formHelper" text={`Day ${item.dayNumber}`} style={$wordDay} />
-      </View>
-    )
-  }
-
-  if (loading) {
-    return (
-      <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} style={$screen}>
-        <View style={$contentContainer}>
-          <Text preset="default">Loading game...</Text>
-        </View>
-      </Screen>
-    )
-  }
-
-  if (!game) {
-    return (
-      <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} style={$screen}>
-        <View style={$contentContainer}>
-          <Text preset="default">Game not found</Text>
-          <Spacer size={16} />
-          <Button text="Go Back" onPress={() => router.back()} />
-        </View>
-      </Screen>
-    )
-  }
-
-  return (
-    <Screen preset="scroll" safeAreaEdges={["top", "bottom"]} style={$screen}>
-      <View style={$contentContainer}>
-        <Text preset="heading" text={game.name} />
-        {game.description && (
-          <Text preset="formHelper" text={game.description} style={$gameDescription} />
-        )}
-        <Text preset="formHelper" text={`Code: ${game.code}`} style={$gameCode} />
-        <Text preset="formHelper" text={`Status: ${game.status}`} style={$gameStatus} />
-
-        <Spacer size={24} />
-
-        <Text preset="subheading" text="Members" />
-        <Spacer size={12} />
-        {members.length === 0 ? (
-          <Text preset="formHelper" text="No members found" style={$emptyText} />
-        ) : (
-          <FlatList
-            data={members}
-            renderItem={renderMember}
-            keyExtractor={(item) => `${item.userId}-${item.gameId}`}
-            style={$membersList}
-            scrollEnabled={false}
-          />
-        )}
-
-        <Spacer size={24} />
-
-        <Text preset="subheading" text="Words" />
-        <Spacer size={12} />
-        {words.length === 0 ? (
-          <Text preset="formHelper" text="No words found" style={$emptyText} />
-        ) : (
-          <FlatList
-            data={words}
-            renderItem={renderWord}
-            keyExtractor={(item) => `${item.gameId}-${item.id}`}
-            style={$wordsList}
-            scrollEnabled={false}
-          />
-        )}
-
-        <Spacer size={24} />
-        <Button text="Go Back" onPress={() => router.back()} />
-      </View>
-    </Screen>
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+      const timer = setInterval(refresh, POLL_MS)
+      return () => clearInterval(timer)
+    }, [refresh]),
   )
+
+  if (!mission || !board) {
+    return (
+      <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} contentContainerStyle={$placeholder}>
+        <TopBar left="back" label="Case file" />
+        <View style={$center}>
+          <Text
+            preset={failed ? "copy" : "label"}
+            text={
+              failed ? "This file couldn't be opened. Pull it again later." : "Pulling the file…"
+            }
+          />
+        </View>
+      </Screen>
+    )
+  }
+
+  const props = { mission, board, onChanged: refresh }
+  const { status } = mission.game
+
+  if (status === "lobby") return <LobbyView {...props} />
+  if (status === "ended" || status === "canceled") return <DebriefView {...props} />
+  if (mission.me.status !== "active") return <EliminatedView {...props} />
+  if (mission.incoming) return <IncomingReportView {...props} />
+  return <MissionView {...props} />
 }
 
-const $screen = {
-  flex: 1,
-}
-
-const $contentContainer = {
-  padding: 24,
-}
-
-const $gameDescription = {
-  marginTop: 8,
-  color: "#666",
-}
-
-const $gameCode = {
-  marginTop: 4,
-  fontFamily: "monospace",
-  color: "#007AFF",
-}
-
-const $gameStatus = {
-  marginTop: 4,
-  color: "#666",
-  textTransform: "capitalize" as const,
-}
-
-const $membersList = {
-  flex: 1,
-}
-
-const $wordsList = {
-  flex: 1,
-}
-
-const $memberItem = {
-  backgroundColor: "#f5f5f5",
-  padding: 12,
-  borderRadius: 8,
-  marginBottom: 8,
-}
-
-const $memberRole = {
-  marginTop: 4,
-  color: "#666",
-  textTransform: "capitalize" as const,
-}
-
-const $wordItem = {
-  backgroundColor: "#f5f5f5",
-  padding: 12,
-  borderRadius: 8,
-  marginBottom: 8,
-}
-
-const $wordDay = {
-  marginTop: 4,
-  color: "#666",
-}
-
-const $emptyText = {
-  color: "#999",
-  fontStyle: "italic" as const,
-}
+const $placeholder: ViewStyle = { flex: 1, paddingHorizontal: 22 }
+const $center: ViewStyle = { flex: 1, alignItems: "center", justifyContent: "center" }

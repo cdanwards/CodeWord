@@ -5,7 +5,9 @@ import { useAuth } from "@/stores"
 import { useAppTheme } from "@/theme/context"
 
 export default function AuthLayout() {
-  const { themed } = useAppTheme()
+  const {
+    theme: { colors },
+  } = useAppTheme()
   const { isAuthenticated, isLoading } = useAuth()
 
   console.log("[(auth) layout]", { isLoading, isAuthenticated })
@@ -15,7 +17,8 @@ export default function AuthLayout() {
     return (
       <ActivityIndicator
         size="large"
-        color={themed({ colors: { primary: "red" } }).colors.primary}
+        color={colors.red}
+        style={[$spinner, { backgroundColor: colors.paper }]}
       />
     )
 
@@ -28,3 +31,5 @@ export default function AuthLayout() {
     </Stack>
   )
 }
+
+const $spinner = { flex: 1 }
