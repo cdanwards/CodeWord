@@ -1,7 +1,7 @@
 // Drains the notifications outbox (migration 009) into Expo's push service.
 //
 // Called by the database through pg_net whenever notifications are queued, and once a minute by
-// the codeword-tick cron job. Only the service role key is accepted.
+// the codeword-tick cron job. Only service-role callers are accepted.
 //
 // Env: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase. EXPO_ACCESS_TOKEN is
 // optional (needed only if push security is turned on for the Expo project). EXPO_PUSH_URL
@@ -10,7 +10,14 @@
 // eslint-disable-next-line import/no-unresolved
 import { createClient } from "npm:@supabase/supabase-js@2"
 
-import { buildMessages, chunk, type ExpoTicket, type OutboxRow, settle } from "./messages.ts"
+import {
+  buildMessages,
+  chunk,
+  type ExpoTicket,
+  jwtRole,
+  type OutboxRow,
+  settle,
+} from "./messages.ts"
 
 const EXPO_PUSH_URL = Deno.env.get("EXPO_PUSH_URL") || "https://exp.host/--/api/v2/push/send"
 const EXPO_ACCESS_TOKEN = Deno.env.get("EXPO_ACCESS_TOKEN")
@@ -24,7 +31,11 @@ const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", SERVICE_ROLE_K
 const MAX_ROUNDS = 10
 
 Deno.serve(async (req) => {
-  if (!SERVICE_ROLE_KEY || req.headers.get("Authorization") !== `Bearer ${SERVICE_ROLE_KEY}`) {
+  // Supabase verifies the JWT's signature before the function runs (verify_jwt, pinned on in
+  // config.toml), so the role claim can be trusted. Comparing against SUPABASE_SERVICE_ROLE_KEY
+  // instead breaks on hosted projects, where that variable may hold a different-format key than
+  // the legacy service_role JWT the database sends.
+  if (jwtRole(req.headers.get("Authorization")) !== "service_role") {
     return Response.json({ error: "Forbidden" }, { status: 403 })
   }
 

@@ -1,6 +1,7 @@
 import {
   buildMessages,
   chunk,
+  jwtRole,
   type ExpoTicket,
   type OutboxRow,
   settle,
@@ -67,5 +68,16 @@ describe("send-push messages", () => {
     expect(settle(rows, messages, owners, []).retry).toEqual([
       { id: 1, error: "No ticket returned" },
     ])
+  })
+
+  it("reads the role claim from a bearer token", () => {
+    const token = (claims: object) =>
+      `x.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.sig`
+    expect(jwtRole(`Bearer ${token({ role: "service_role" })}`)).toBe("service_role")
+    expect(jwtRole(`Bearer ${token({ role: "anon" })}`)).toBe("anon")
+    expect(jwtRole(`Bearer ${token({ sub: "x" })}`)).toBeNull()
+    expect(jwtRole("Bearer sb_secret_abc")).toBeNull()
+    expect(jwtRole("Bearer not.base64!.x")).toBeNull()
+    expect(jwtRole(null)).toBeNull()
   })
 })
