@@ -40,6 +40,23 @@ export interface Settlement {
   deadTokens: string[]
 }
 
+/**
+ * The `role` claim of a `Bearer <jwt>` header, or null. Does not check the signature: only use it
+ * where the platform already has (verify_jwt).
+ */
+export function jwtRole(authorization: string | null): string | null {
+  const token = authorization?.match(/^Bearer\s+(\S+)$/)?.[1]
+  const payload = token?.split(".")[1]
+  if (!payload) return null
+  try {
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+    const role = JSON.parse(json)?.role
+    return typeof role === "string" ? role : null
+  } catch {
+    return null
+  }
+}
+
 // Expo accepts up to 100 messages per request.
 export const EXPO_BATCH_SIZE = 100
 

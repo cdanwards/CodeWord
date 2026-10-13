@@ -43,6 +43,6 @@ Pushes go through Expo's push service, so the server holds no APNs or FCM creden
 - Day turnovers and time limits now happen within a minute even when nobody has the app open. ADR 0002's "applied lazily, no cron" still holds for reads, and the tick adds a floor under it.
 - Delivery problems never fail a game action: `_dispatch_push` swallows errors and the tick retries. A row is given up on after five attempts.
 - Hosted projects need two Vault secrets (`codeword_functions_url`, `codeword_service_role_key`) and the function deployed. Without them rows stay queued and nothing is sent.
-- Real pushes need an EAS project ID in the app (`EAS_PROJECT_ID`) and a physical device. The simulator gets the permission prompt and displays simulated pushes, but can't get a token.
+- Real pushes need the EAS project ID (`extra.eas.projectId` in `app.json`) and a physical device. The simulator gets the permission prompt and displays simulated pushes, but can't get a token.
 - Expo push receipts (the second, delayed delivery report) are not checked yet, so a token Apple rejects later is only noticed on the next send.
 - The game screen still polls every 8 seconds. A push about the open game triggers an immediate refresh.

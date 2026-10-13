@@ -39,7 +39,7 @@ SUPABASE_ANON_KEY=<the "anon key" from supabase status>
 NETWORK_CHECKS_ENABLED=0
 ```
 
-On an Android emulator use `http://10.0.2.2:54321`. To get real push tokens on a device, also set `EAS_PROJECT_ID` (from `eas init`).
+On an Android emulator use `http://10.0.2.2:54321`.
 
 ## 4. Build the dev client (once, and after native changes)
 

@@ -63,4 +63,4 @@ See the [testing matrix](docs/development/testing-matrix.md).
 
 ## Status
 
-Playable end to end on the iOS simulator against a local backend. Push notifications work end to end locally (simulated on the simulator, checked by `scripts/push-check.mjs`) but need an EAS project and a device build to reach a real phone. Not yet built: realtime updates (the game screen polls), a hosted Supabase project, release builds, and an Android pass. The upgrade and cleanup backlog is in [`VerifiedSpecs/00-INDEX.md`](VerifiedSpecs/00-INDEX.md).
+Playable end to end on the iOS simulator against a local backend. The hosted Supabase project (`peuvdwygnzjoexsqildc`) has the full schema and the push sender, and the EAS project is `@cdanwards/CodewordApp`. Not yet built: a device or TestFlight build (needed for real pushes), realtime updates (the game screen polls), and an Android pass. The upgrade and cleanup backlog is in [`VerifiedSpecs/00-INDEX.md`](VerifiedSpecs/00-INDEX.md).
