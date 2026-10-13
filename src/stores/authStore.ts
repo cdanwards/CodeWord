@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 
 import { authClient } from "@/lib/auth-client"
+import { unregisterFromPush } from "@/lib/notifications"
 
 import { zustandStorage } from "./storage"
 
@@ -179,6 +180,8 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           console.log("[authStore] signOut try")
+          // While still signed in, so the server lets us remove this device's token.
+          await unregisterFromPush().catch(() => {})
           await authClient.signOut()
           console.log("[authStore] signOut try done")
           setError(null)

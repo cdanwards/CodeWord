@@ -23,6 +23,9 @@ module.exports = ({ config }: ConfigContext): Partial<ExpoConfig> => {
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
       // Feature flags
       networkChecksEnabled: process.env.NETWORK_CHECKS_ENABLED === "1" ? true : false,
+      // Expo push tokens are issued per EAS project (`eas init` prints the ID). Without it the
+      // app still asks for permission but can't register for pushes.
+      ...(process.env.EAS_PROJECT_ID ? { eas: { projectId: process.env.EAS_PROJECT_ID } } : {}),
     },
     ios: {
       ...config.ios,
