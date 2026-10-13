@@ -461,6 +461,10 @@ async function main() {
   await check("only the service role can claim the outbox", () =>
     rpcFails(bob, "claim_push_batch", { p_limit: 10 }),
   )
+  await check("agents can't probe or trigger the push dispatcher", async () => {
+    await rpcFails(bob, "check_dispatch_secret", { p_secret: "guess" })
+    await rpcFails(bob, "_dispatch_push", {})
+  })
 
   console.log(`\n${passed} checks passed`)
 }

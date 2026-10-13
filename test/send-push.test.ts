@@ -1,9 +1,9 @@
 import {
   buildMessages,
   chunk,
-  jwtRole,
   type ExpoTicket,
   type OutboxRow,
+  serviceKey,
   settle,
 } from "../supabase/functions/send-push/messages"
 
@@ -70,14 +70,11 @@ describe("send-push messages", () => {
     ])
   })
 
-  it("reads the role claim from a bearer token", () => {
-    const token = (claims: object) =>
-      `x.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.sig`
-    expect(jwtRole(`Bearer ${token({ role: "service_role" })}`)).toBe("service_role")
-    expect(jwtRole(`Bearer ${token({ role: "anon" })}`)).toBe("anon")
-    expect(jwtRole(`Bearer ${token({ sub: "x" })}`)).toBeNull()
-    expect(jwtRole("Bearer sb_secret_abc")).toBeNull()
-    expect(jwtRole("Bearer not.base64!.x")).toBeNull()
-    expect(jwtRole(null)).toBeNull()
+  it("prefers the new secret key and falls back to the legacy one", () => {
+    expect(serviceKey(JSON.stringify({ default: "sb_secret_a" }), "eyJ.legacy")).toBe("sb_secret_a")
+    expect(serviceKey(JSON.stringify({ other: "sb_secret_b" }), "eyJ.legacy")).toBe("sb_secret_b")
+    expect(serviceKey(undefined, "eyJ.legacy")).toBe("eyJ.legacy")
+    expect(serviceKey("not json", "eyJ.legacy")).toBe("eyJ.legacy")
+    expect(serviceKey(JSON.stringify({}), undefined)).toBe("")
   })
 })

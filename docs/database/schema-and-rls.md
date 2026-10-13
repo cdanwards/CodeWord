@@ -28,7 +28,7 @@ Status values: `games.status` is `lobby` -> `active` -> `ended` (or `canceled`).
 
 Internal helpers (`_sync_game`, `_grant_daily_words`, `_finish_game`, `_agent_name`, `_game_current_day`, `_game_days_total`) are revoked from `anon` and `authenticated`. `_sync_game` runs at the start of `my_mission`, `game_board` and `report_elimination`: it ends the game if time is up, otherwise issues any missing daily words. See [ADR 0002](../adr/0002-server-side-game-engine.md) for the rules.
 
-Migration 009 adds `register_push_token` and `unregister_push_token` for signed-in users, `claim_push_batch` for the service role only, and triggers that fill the `notifications` outbox. The `codeword-tick` pg_cron job runs `_tick()` every minute. See [push notifications](../architecture/push-notifications.md).
+Migration 009 adds `register_push_token` and `unregister_push_token` for signed-in users, `claim_push_batch` (and, from 010, `check_dispatch_secret`) for the service role only, and triggers that fill the `notifications` outbox. The `codeword-tick` pg_cron job runs `_tick()` every minute. See [push notifications](../architecture/push-notifications.md).
 
 RLS helpers `is_game_member(game_id)` and `shares_game_with(user_id)` are `SECURITY DEFINER` so policies on `user_games` can refer to `user_games` without recursion.
 

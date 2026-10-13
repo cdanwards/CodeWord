@@ -192,13 +192,16 @@ async function main() {
     }),
   )
 
-  await check("the function refuses anyone without the service role key", async () => {
-    const response = await fetch(`${URL}/functions/v1/send-push`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${ANON}`, "Content-Type": "application/json" },
-      body: "{}",
-    })
-    assert.equal(response.status, 403)
+  await check("the function refuses calls without the dispatch secret", async () => {
+    const call = (headers) =>
+      fetch(`${URL}/functions/v1/send-push`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: "{}",
+      }).then((r) => r.status)
+    assert.equal(await call({}), 403)
+    assert.equal(await call({ "x-codeword-dispatch": "wrong" }), 403)
+    assert.equal(await call({ Authorization: `Bearer ${status.SERVICE_ROLE_KEY}` }), 403)
   })
 
   console.log(`\n${passed} checks passed`)

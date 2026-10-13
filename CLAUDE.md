@@ -47,7 +47,7 @@ supabase/
   schema.ts         # Drizzle table definitions + Zod schemas + types
   migrations/       # SQL migration files
   functions/        # Edge Functions (Deno): send-push
-  seed.sql          # Local-only Vault secrets for push delivery
+  seed.sql          # Local-only: the functions URL in Vault for push delivery
   database.ts       # DB connection config
 docs/               # Canonical documentation (start at docs/README.md)
 specs/              # Product specs (requirements.md, design.md, glossary.md)
@@ -103,6 +103,8 @@ ClaudePlans/        # Implementation plans (preferred location for plans)
 - App side: `src/lib/notifications.ts`. The game screen asks for permission; the signed-in layout re-registers the token and opens the game when a push is tapped; sign-out unregisters the device first.
 - `supabase/functions/` is Deno, excluded from `tsconfig.json`. Keep testable logic in `messages.ts` (no Deno APIs) and test it from `test/`.
 - Simulators can't get Expo push tokens: test with `node scripts/push-check.mjs` and `xcrun simctl push`.
+- The database authenticates to `send-push` with a dispatch secret generated in Vault (migration 010), not an API key. Deploy with `--no-verify-jwt`. Never put a service or secret key in Vault, a migration or chat.
+- The hosted app uses the publishable key (`sb_publishable_`) as `SUPABASE_ANON_KEY`; legacy JWT-based keys are disabled on the hosted project.
 
 ### Design system
 - "Spy dossier" design; source of truth is the Claude Design project described in `ClaudePlans/dossier-redesign.md`, which also maps every design class to a component. Light-only: paper/manila surfaces; the sign-in cover and the active mission opt into `colors.night*`.
