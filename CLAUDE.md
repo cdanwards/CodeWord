@@ -144,6 +144,11 @@ node scripts/agent.mjs <agent> <command> <CODE>   # Act as a test agent
 - Any database or engine change: `supabase db reset --local && node scripts/simulate-game.mjs`, and add a check for new rules or permissions. Notification changes: also `node scripts/push-check.mjs`
 - UI changes: verify on the iOS simulator (see `docs/development/testing-matrix.md`)
 
+## Releasing
+
+- iOS bundle ID and Android package: `com.cdanwards.codeword`. EAS project `@cdanwards/CodewordApp` (ID in `app.json`).
+- EAS cloud builds never see `.env*`; build-time values live in `eas.json` (production profile `env`). See `docs/development/releasing.md`.
+
 ## Environment
 
 - Supabase URL and anon key come from environment variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)

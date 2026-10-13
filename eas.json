@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.15.1"
+    "version": ">= 3.15.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -25,14 +26,27 @@
     "preview": {
       "extends": "production",
       "distribution": "internal",
-      "ios": { "simulator": true },
-      "android": { "buildType": "apk" }
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview:device": {
       "extends": "preview",
-      "ios": { "simulator": false }
+      "ios": {
+        "simulator": false
+      }
     },
-    "production": {}
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "SUPABASE_URL": "https://peuvdwygnzjoexsqildc.supabase.co",
+        "SUPABASE_ANON_KEY": "sb_publishable_MMp1zmeJGs8tX-Ko15_lDw_zB3mzrWH",
+        "NETWORK_CHECKS_ENABLED": "0"
+      }
+    }
   },
   "submit": {
     "production": {}

@@ -59,7 +59,7 @@ The iOS simulator can't get an Expo push token, but it can show a push. To see w
 
 ```json
 {
-  "Simulator Target Bundle": "com.codewordapp",
+  "Simulator Target Bundle": "com.cdanwards.codeword",
   "aps": { "alert": { "title": "You've been made", "body": "Bob Martinez says you said a codeword. Confirm or dispute it." }, "sound": "default" },
   "body": { "notificationId": 1, "gameId": 6, "kind": "report_incoming" }
 }
