@@ -461,6 +461,13 @@ export const db = {
       }),
     ),
 
+  // Push devices (migration 009). The token table itself is not readable from the client.
+  registerPushToken: (token: string, platform: "ios" | "android"): Promise<ActionResult> =>
+    runAction(supabase.rpc("register_push_token", { p_token: token, p_platform: platform })),
+
+  unregisterPushToken: (token: string): Promise<ActionResult> =>
+    runAction(supabase.rpc("unregister_push_token", { p_token: token })),
+
   deleteUserGame: async (id: number): Promise<boolean> => {
     try {
       const { error } = await supabase.from("user_games").delete().eq("id", id)

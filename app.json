@@ -54,6 +54,12 @@
         }
       }
     ],
+    [
+      "expo-notifications",
+      {
+        "color": "#BE241F"
+      }
+    ],
     "expo-router"
   ],
   "experiments": {

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Plays complete operations against the LOCAL Supabase stack with real signed-in agents and
- * checks the game engine rules (supabase/migrations/005_game_engine.sql) and permissions.
+ * checks the game engine rules (supabase/migrations/005_game_engine.sql), permissions, and the
+ * notifications each event queues (009_push_notifications.sql). Delivery itself is checked by
+ * scripts/push-check.mjs.
  *
  *   supabase start && node scripts/simulate-game.mjs
  *
@@ -70,6 +72,26 @@ async function rpcFails(who, fn, args, pattern) {
   if (pattern) assert.match(error.message, pattern)
 }
 
+/** Outbox rows for one game, oldest first, as [{ user_id, kind, title, body }]. */
+async function outbox(gameId) {
+  const { data, error } = await admin
+    .from("notifications")
+    .select("user_id, kind, title, body")
+    .eq("game_id", gameId)
+    .order("id")
+  if (error) throw error
+  return data
+}
+
+function recipients(rows, kind) {
+  return rows
+    .filter((r) => r.kind === kind)
+    .map((r) => r.user_id)
+    .sort()
+}
+
+const ids = (...agents) => agents.map((a) => a.id).sort()
+
 async function openOperation(host, players, durationHours = 72) {
   const code = Math.random().toString(36).slice(2, 8).toUpperCase()
   const { data: game, error } = await host.client
@@ -137,6 +159,14 @@ async function main() {
     rpcFails(bob, "start_game", { p_game_id: game.id }, /host/),
   )
   await check("host starts the operation", () => rpc(host, "start_game", { p_game_id: game.id }))
+  await check("the host is told about each recruit", async () => {
+    const rows = await outbox(game.id)
+    assert.deepEqual(recipients(rows, "agent_joined"), ids(host, host, host))
+    assert.ok(rows.some((r) => r.body === `Priya Shah joined Sim ${run}.`))
+  })
+  await check("the start is announced to everyone but the host", async () => {
+    assert.deepEqual(recipients(await outbox(game.id), "game_started"), ids(bob, priya, dev))
+  })
   await check("joining after the start is refused", async () => {
     const late = await agent(5, "Late Larry")
     const { error } = await late.client
@@ -242,6 +272,14 @@ async function main() {
       p_word: hostMission.words[0].word,
     })
   })
+  await check("a report pages the target", async () => {
+    const rows = (await outbox(game.id)).filter((r) => r.kind === "report_incoming")
+    assert.deepEqual(
+      rows.map((r) => r.user_id),
+      [target.id],
+    )
+    assert.equal(rows[0].body, "Alice Host says you said a codeword. Confirm or dispute it.")
+  })
   await check("one pending report at a time", () =>
     rpcFails(
       host,
@@ -274,6 +312,7 @@ async function main() {
     const m = await rpc(host, "my_mission", { p_game_id: game.id })
     assert.equal(m.outgoing, null)
     assert.equal(m.target.user_id, target.id)
+    assert.deepEqual(recipients(await outbox(game.id), "report_disputed"), [host.id])
   })
   await check("confirming hands over the target and the words", async () => {
     reportId = await rpc(host, "report_elimination", {
@@ -290,6 +329,7 @@ async function main() {
     assert.equal(out.me.status, "eliminated")
     assert.equal(out.words.length, 0)
     assert.equal(out.eliminated_by.killer_name, "Alice Host")
+    assert.deepEqual(recipients(await outbox(game.id), "report_confirmed"), [host.id])
   })
   await check("eliminated agents can't report", () =>
     rpcFails(target, "report_elimination", { p_game_id: game.id, p_word: "anything" }, /out/),
@@ -324,6 +364,21 @@ async function main() {
       .single()
     assert.equal(data.total_eliminations, 3)
   })
+  await check("the final kill is announced once, as the end of the operation", async () => {
+    const rows = await outbox(game.id)
+    // Three kills, but the last one ends the game, so only two "kill confirmed" notices.
+    assert.equal(recipients(rows, "report_confirmed").length, 2)
+    const over = rows.filter((r) => r.kind === "game_over")
+    // Everyone but the final victim, who ended it by confirming.
+    assert.equal(over.length, 3)
+    const winnerRow = over.find((r) => r.user_id === remaining[0].id)
+    assert.equal(winnerRow.title, "You won")
+    assert.ok(
+      over
+        .filter((r) => r !== winnerRow)
+        .every((r) => r.body === `${remaining[0].name} is the last agent standing in Sim ${run}.`),
+    )
+  })
 
   console.log("\nDaily words and the clock")
   const timed = await openOperation(host, [bob, priya], 72)
@@ -337,6 +392,10 @@ async function main() {
     const m = await rpc(bob, "my_mission", { p_game_id: timed.id })
     assert.equal(m.game.day, 2)
     assert.deepEqual(m.words.map((w) => w.difficulty).sort(), [1, 2])
+  })
+  await check("new daily words are announced, except to the agent who triggered them", async () => {
+    // Bob's my_mission call issued everyone's day-2 word; he's looking at the app already.
+    assert.deepEqual(recipients(await outbox(timed.id), "word_issued"), ids(host, priya))
   })
   await check("day 3 issues an easy word", async () => {
     await admin
@@ -358,6 +417,9 @@ async function main() {
     const m = await rpc(host, "my_mission", { p_game_id: timed.id })
     assert.equal(m.game.status, "ended")
     assert.equal(m.game.completion_reason, "time_up")
+    const over = (await outbox(timed.id)).filter((r) => r.kind === "game_over")
+    assert.deepEqual(over.map((r) => r.user_id).sort(), ids(bob, priya))
+    assert.ok(over.every((r) => r.body.startsWith("Time ran out")))
   })
   await check("only the host can end early", async () => {
     const early = await openOperation(host, [bob])
@@ -365,6 +427,40 @@ async function main() {
     await rpcFails(bob, "end_game", { p_game_id: early.id }, /host/)
     await rpc(host, "end_game", { p_game_id: early.id })
   })
+
+  console.log("\nDevices and notifications")
+  const token = `ExponentPushToken[sim-${run}]`
+  await check("agents register a device but can't read the token table", async () => {
+    await rpc(bob, "register_push_token", { p_token: token, p_platform: "ios" })
+    const { data } = await bob.client.from("push_tokens").select("*")
+    assert.equal(data?.length ?? 0, 0)
+    const { data: row } = await admin
+      .from("push_tokens")
+      .select("user_id")
+      .eq("token", token)
+      .single()
+    assert.equal(row.user_id, bob.id)
+  })
+  await check("a device that changes hands moves to the new agent", async () => {
+    await rpc(priya, "register_push_token", { p_token: token, p_platform: "ios" })
+    const { data } = await admin.from("push_tokens").select("user_id").eq("token", token)
+    assert.deepEqual(
+      data.map((r) => r.user_id),
+      [priya.id],
+    )
+    await rpc(bob, "unregister_push_token", { p_token: token })
+    const { data: still } = await admin.from("push_tokens").select("user_id").eq("token", token)
+    assert.equal(still.length, 1, "bob can't unregister priya's device")
+    await rpc(priya, "unregister_push_token", { p_token: token })
+  })
+  await check("agents only see their own notifications", async () => {
+    const { data } = await bob.client.from("notifications").select("user_id")
+    assert.ok(data.length > 0)
+    assert.ok(data.every((r) => r.user_id === bob.id))
+  })
+  await check("only the service role can claim the outbox", () =>
+    rpcFails(bob, "claim_push_batch", { p_limit: 10 }),
+  )
 
   console.log(`\n${passed} checks passed`)
 }

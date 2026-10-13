@@ -13,6 +13,7 @@
 - [Overview](architecture/overview.md): stack, layers, folders, routes
 - [Client data flow](architecture/client-data-flow.md): how screens load data and call the game engine
 - [Auth and session lifecycle](architecture/auth-and-session-lifecycle.md): sign-up, sign-in, route guards, persistence
+- [Push notifications](architecture/push-notifications.md): the outbox, the send-push function, device registration, testing pushes locally
 
 ## Database
 
@@ -30,6 +31,7 @@
 - [ADR 0001: Documentation source of truth](adr/0001-documentation-source-of-truth.md)
 - [ADR 0002: Server-side game engine](adr/0002-server-side-game-engine.md)
 - [ADR 0003: Spy-dossier design system](adr/0003-spy-dossier-design-system.md)
+- [ADR 0004: Push notifications through a database outbox](adr/0004-push-notifications-outbox.md)
 - [Ownership and decision records](governance/ownership-and-decision-records.md)
 
 ## Product

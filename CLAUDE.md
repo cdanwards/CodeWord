@@ -2,7 +2,7 @@
 
 ## Start here
 
-- **`docs/README.md` is the canonical documentation** (architecture, database and RLS, local setup, testing, design system, decisions). Read the relevant doc before changing that area, and update it in the same change (see `docs/governance/ownership-and-decision-records.md`).
+- `docs/README.md` is the canonical documentation (architecture, database and RLS, local setup, testing, design system, decisions). Read the relevant doc before changing that area, and update it in the same change (see `docs/governance/ownership-and-decision-records.md`).
 - Product intent: `specs/requirements.md`, `specs/design.md`, and vocabulary in `specs/glossary.md`.
 - `MainPlans/`, `VerifiedSpecs/`, `ClaudePlans/`, `Evaluations/` and `llm-helpers/` are plans, reviews and old notes. They are **not authoritative**: several describe code that has since changed. Check the code and `docs/` first.
 
@@ -12,16 +12,16 @@ CodewordApp is a mobile Word Assassins companion built with React Native (Expo S
 
 ## Tech Stack
 
-- **Framework:** React Native 0.79 + Expo SDK 53 + Expo Router 5 (file-based routing)
-- **Language:** TypeScript (strict mode)
-- **State:** Zustand 5 with MMKV persistence
-- **Backend:** Supabase (Auth, Postgres, RLS policies)
-- **Schema/Validation:** Drizzle ORM for schema definitions, Zod 4 for runtime validation
-- **Testing:** Jest + jest-expo + @testing-library/react-native
-- **Styling:** Inline styles / theme system (no CSS-in-JS library)
-- **i18n:** i18next + react-i18next
-- **Networking:** Apisauce (for non-Supabase API calls)
-- **Dev tools:** Reactotron, ESLint, Prettier
+- Framework: React Native 0.79 + Expo SDK 53 + Expo Router 5 (file-based routing)
+- Language: TypeScript (strict mode)
+- State: Zustand 5 with MMKV persistence
+- Backend: Supabase (Auth, Postgres, RLS policies)
+- Schema/Validation: Drizzle ORM for schema definitions, Zod 4 for runtime validation
+- Testing: Jest + jest-expo + @testing-library/react-native
+- Styling: Inline styles / theme system (no CSS-in-JS library)
+- i18n: i18next + react-i18next
+- Networking: Apisauce (for non-Supabase API calls)
+- Dev tools: Reactotron, ESLint, Prettier
 
 ## Project Structure
 
@@ -46,6 +46,8 @@ src/
 supabase/
   schema.ts         # Drizzle table definitions + Zod schemas + types
   migrations/       # SQL migration files
+  functions/        # Edge Functions (Deno): send-push
+  seed.sql          # Local-only Vault secrets for push delivery
   database.ts       # DB connection config
 docs/               # Canonical documentation (start at docs/README.md)
 specs/              # Product specs (requirements.md, design.md, glossary.md)
@@ -74,11 +76,11 @@ ClaudePlans/        # Implementation plans (preferred location for plans)
 ### Database
 - All table schemas defined in `supabase/schema.ts` using Drizzle ORM
 - Type-safe CRUD helpers in `src/lib/database.ts` using Supabase client directly
-- Tables: `user_profiles`, `games`, `user_games`, `assignments`, `eliminations`, `elimination_confirmations`, `game_results`, `word_bank`, `agent_words`
+- Tables: `user_profiles`, `games`, `user_games`, `assignments`, `eliminations`, `elimination_confirmations`, `game_results`, `word_bank`, `agent_words`, `push_tokens`, `notifications`
 - RLS policies enforced on all public tables
 - Migrations in `supabase/migrations/` (numbered SQL files)
 
-- **Case boundary:** Postgres columns are snake_case; app types are camelCase. In `src/lib/database.ts`, wrap every row returned with `fromRow(...)` and every camelCase insert/update payload with `toRow(...)`. Never read `row.user_id` in UI code or send `{ gameId }` to Supabase. The client is untyped, so TypeScript will not catch a miss.
+- Case boundary: Postgres columns are snake_case; app types are camelCase. In `src/lib/database.ts`, wrap every row returned with `fromRow(...)` and every camelCase insert/update payload with `toRow(...)`. Never read `row.user_id` in UI code or send `{ gameId }` to Supabase. The client is untyped, so TypeScript will not catch a miss.
 - Queries that embed a relation (`select("*, games (*)")`) return the `*With*` types from `supabase/schema.ts` (e.g. `UserGameWithGame`).
 - Local dev runs against `supabase start` (Docker); see README "Running locally". Inspect the DB with `docker exec supabase_db_CodeWord psql -U postgres`.
 
@@ -88,12 +90,19 @@ ClaudePlans/        # Implementation plans (preferred location for plans)
 - Never `await` a Supabase call inside an `onAuthStateChange` callback. Supabase holds its auth lock while the callback runs, so the call deadlocks every later `getSession`. Defer it with `setTimeout(..., 0)` (see `AuthProvider`).
 
 ### Game engine
-- Rules and SQL live in `supabase/migrations/005_game_engine.sql` (word bank seed: `006_word_bank.sql`). Agents hold several codewords: one new word per day (hard → medium → easy), plus every word inherited from agents they eliminate. Targets confirm or dispute reports. The host plays.
+- Rules and SQL live in `supabase/migrations/005_game_engine.sql` (word bank seed: `006_word_bank.sql`). Agents hold several codewords: one new word per day (hard, then medium, then easy), plus every word inherited from agents they eliminate. Targets confirm or dispute reports. The host plays.
 - All game actions go through SECURITY DEFINER functions: `start_game`, `my_mission`, `game_board`, `report_elimination`, `respond_to_elimination`, `end_game`. Client wrappers: `db.getMission`, `db.getBoard`, `db.startGame`, `db.endGame`, `db.reportElimination`, `db.respondToElimination` (actions return `ActionResult`). Never write `assignments`, `eliminations` or `agent_words` from the client.
-- Daily words and the time limit are applied lazily whenever `my_mission` / `game_board` / `report_elimination` runs; there is no cron.
+- Daily words and the time limit are applied lazily whenever `my_mission` / `game_board` / `report_elimination` runs, and by the once-a-minute `codeword-tick` pg_cron job (migration 009).
 - The kill feed hides the word from everyone except the killer and the victim.
 - After changing the engine, run `node scripts/simulate-game.mjs` (plays full games against local Supabase and checks rules and permissions). `node scripts/agent.mjs <alice|bob|priya|dev> <command> <CODE>` plays as a test agent from the terminal.
 - UI: `src/app/(app)/game/[id].tsx` polls and picks one view from `src/components/game/` (Lobby, Mission + ReportSheet, IncomingReport, Eliminated, Debrief).
+
+### Push notifications
+- Design: `docs/adr/0004-push-notifications-outbox.md`; guide: `docs/architecture/push-notifications.md`.
+- Triggers on engine tables write a `notifications` outbox (migration 009); pg_net calls the `send-push` Edge Function (`supabase/functions/send-push/`), which sends through Expo. Message text lives in those triggers. Never notify the agent who caused the event (`_notify` skips `auth.uid()`).
+- App side: `src/lib/notifications.ts`. The game screen asks for permission; the signed-in layout re-registers the token and opens the game when a push is tapped; sign-out unregisters the device first.
+- `supabase/functions/` is Deno, excluded from `tsconfig.json`. Keep testable logic in `messages.ts` (no Deno APIs) and test it from `test/`.
+- Simulators can't get Expo push tokens: test with `node scripts/push-check.mjs` and `xcrun simctl push`.
 
 ### Design system
 - "Spy dossier" design; source of truth is the Claude Design project described in `ClaudePlans/dossier-redesign.md`, which also maps every design class to a component. Light-only: paper/manila surfaces; the sign-in cover and the active mission opt into `colors.night*`.
@@ -119,7 +128,8 @@ yarn test             # Run Jest tests
 yarn test:watch       # Jest in watch mode
 supabase start                    # Local backend (Docker)
 supabase migration up --local     # Apply new migrations, keep data
-node scripts/simulate-game.mjs    # Engine rules + RLS checks against the local backend
+node scripts/simulate-game.mjs    # Engine rules + RLS + notification checks against the local backend
+node scripts/push-check.mjs       # Push delivery through send-push to a local Expo stand-in
 node scripts/agent.mjs <agent> <command> <CODE>   # Act as a test agent
 ```
 
@@ -129,7 +139,7 @@ node scripts/agent.mjs <agent> <command> <CODE>   # Act as a test agent
 - Jest config: `jest.config.js` uses `jest-expo` preset
 - Setup file: `test/setup.ts` (mocks for react-native, i18next, expo-localization)
 - Run `yarn test` to execute; `yarn compile` for type checking
-- Any database or engine change: `supabase db reset --local && node scripts/simulate-game.mjs`, and add a check for new rules or permissions
+- Any database or engine change: `supabase db reset --local && node scripts/simulate-game.mjs`, and add a check for new rules or permissions. Notification changes: also `node scripts/push-check.mjs`
 - UI changes: verify on the iOS simulator (see `docs/development/testing-matrix.md`)
 
 ## Environment

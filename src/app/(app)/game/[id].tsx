@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { View, ViewStyle } from "react-native"
 import { useFocusEffect, useLocalSearchParams } from "expo-router"
 
@@ -11,17 +11,18 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { TopBar } from "@/components/ui/TopBar"
 import { db } from "@/lib/database"
+import { registerForPush, usePushesForGame } from "@/lib/notifications"
 
 import type { Board, Mission } from "../../../../supabase/schema"
 
 // Other agents' moves (a report against you, a new target) arrive by polling while the screen
-// is focused.
+// is focused, and right away when a push about this game lands.
 const POLL_MS = 8000
 
 /**
  * One operation. Which view shows depends on the game and on you:
- * lobby → LobbyView; over → DebriefView; you're out → EliminatedView;
- * a report against you → IncomingReportView; otherwise → MissionView.
+ * lobby -> LobbyView; over -> DebriefView; you're out -> EliminatedView;
+ * a report against you -> IncomingReportView; otherwise -> MissionView.
  */
 export default function GameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -44,6 +45,14 @@ export default function GameScreen() {
     setMission(nextMission)
     setBoard(nextBoard)
   }, [gameId])
+
+  // Being in an operation is the moment pushes start to matter, so ask here rather than at
+  // sign-in. iOS only ever shows the system prompt once.
+  useEffect(() => {
+    registerForPush({ prompt: true })
+  }, [])
+
+  usePushesForGame(gameId, refresh)
 
   useFocusEffect(
     useCallback(() => {

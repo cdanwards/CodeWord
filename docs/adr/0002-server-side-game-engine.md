@@ -31,7 +31,7 @@ Every game action is a `SECURITY DEFINER` Postgres function that checks `auth.ui
 
 Clients have no direct access to `assignments`, `eliminations`, `elimination_confirmations` or `agent_words` (beyond reading their own words), and cannot edit memberships.
 
-Time-based rules (one new codeword per day, the time limit) are applied lazily by `_sync_game` at the start of the read and report functions, instead of by a scheduler. The game is correct whenever anyone looks at it, with no cron to run.
+Time-based rules (one new codeword per day, the time limit) are applied lazily by `_sync_game` at the start of the read and report functions, instead of by a scheduler. The game is correct whenever anyone looks at it, with no cron to run. (Since [ADR 0004](0004-push-notifications-outbox.md), a once-a-minute tick also runs `_sync_game` on active games so daily-word and game-over pushes go out without anyone opening the app.)
 
 ## Game rules this encodes (decided 2026-10-08)
 
@@ -45,5 +45,5 @@ Time-based rules (one new codeword per day, the time limit) are applied lazily b
 
 - Rules live in one place and can't be bypassed by a modified client. `scripts/simulate-game.mjs` checks them with real signed-in agents.
 - Changing a rule means a new migration, not an app release.
-- Clients poll `my_mission` and `game_board` (every 8 seconds on the game screen). Supabase Realtime could replace polling later; the functions would stay the same.
+- Clients poll `my_mission` and `game_board` (every 8 seconds on the game screen, and at once when a push about the game arrives). Supabase Realtime could replace polling later; the functions would stay the same.
 - Function results are JSON, so their TypeScript types (`Mission`, `Board` in `supabase/schema.ts`) must be kept in sync by hand.
