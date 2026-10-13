@@ -25,6 +25,7 @@
 - [Local setup](development/local-setup.md)
 - [Testing matrix](development/testing-matrix.md): what each check covers and when to run it
 - [Design system](development/design-system.md): the spy-dossier look and its components
+- [Releasing](development/releasing.md): EAS builds, TestFlight, and checking a real push
 
 ## Decisions
 
