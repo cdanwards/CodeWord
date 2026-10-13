@@ -1,9 +1,11 @@
 // Drains the notifications outbox (migration 009) into Expo's push service.
 //
 // Called by the database through pg_net whenever notifications are queued, and once a minute by
-// the codeword-tick cron job. Only service-role callers are accepted.
+// the codeword-tick cron job. Callers must send the dispatch secret that migration 010 keeps in
+// Vault, in an `x-codeword-dispatch` header; the function asks the database whether it matches.
+// JWT verification is off for this function (config.toml), since no JWT is involved.
 //
-// Env: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase. EXPO_ACCESS_TOKEN is
+// Env: SUPABASE_URL and a service key are provided by Supabase (see serviceKey). EXPO_ACCESS_TOKEN is
 // optional (needed only if push security is turned on for the Expo project). EXPO_PUSH_URL
 // overrides Expo's endpoint; scripts/push-check.mjs points it at a local stand-in.
 // Deno resolves npm: specifiers; the app's ESLint resolver doesn't.
@@ -14,16 +16,19 @@ import {
   buildMessages,
   chunk,
   type ExpoTicket,
-  jwtRole,
   type OutboxRow,
+  serviceKey,
   settle,
 } from "./messages.ts"
 
 const EXPO_PUSH_URL = Deno.env.get("EXPO_PUSH_URL") || "https://exp.host/--/api/v2/push/send"
 const EXPO_ACCESS_TOKEN = Deno.env.get("EXPO_ACCESS_TOKEN")
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+const SERVICE_KEY = serviceKey(
+  Deno.env.get("SUPABASE_SECRET_KEYS"),
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+)
 
-const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", SERVICE_ROLE_KEY, {
+const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
@@ -31,13 +36,13 @@ const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", SERVICE_ROLE_K
 const MAX_ROUNDS = 10
 
 Deno.serve(async (req) => {
-  // Supabase verifies the JWT's signature before the function runs (verify_jwt, pinned on in
-  // config.toml), so the role claim can be trusted. Comparing against SUPABASE_SERVICE_ROLE_KEY
-  // instead breaks on hosted projects, where that variable may hold a different-format key than
-  // the legacy service_role JWT the database sends.
-  if (jwtRole(req.headers.get("Authorization")) !== "service_role") {
-    return Response.json({ error: "Forbidden" }, { status: 403 })
-  }
+  const secret = req.headers.get("x-codeword-dispatch")
+  if (!secret) return Response.json({ error: "Forbidden" }, { status: 403 })
+  const { data: allowed, error: checkError } = await supabase.rpc("check_dispatch_secret", {
+    p_secret: secret,
+  })
+  if (checkError) return Response.json({ error: checkError.message }, { status: 500 })
+  if (allowed !== true) return Response.json({ error: "Forbidden" }, { status: 403 })
 
   let processed = 0
   let sent = 0

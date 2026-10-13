@@ -41,20 +41,21 @@ export interface Settlement {
 }
 
 /**
- * The `role` claim of a `Bearer <jwt>` header, or null. Does not check the signature: only use it
- * where the platform already has (verify_jwt).
+ * The key send-push uses to reach the database. Hosted projects on the new API keys provide
+ * SUPABASE_SECRET_KEYS (a JSON object of named `sb_secret_` keys); older and local stacks provide
+ * the legacy SUPABASE_SERVICE_ROLE_KEY.
  */
-export function jwtRole(authorization: string | null): string | null {
-  const token = authorization?.match(/^Bearer\s+(\S+)$/)?.[1]
-  const payload = token?.split(".")[1]
-  if (!payload) return null
-  try {
-    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
-    const role = JSON.parse(json)?.role
-    return typeof role === "string" ? role : null
-  } catch {
-    return null
+export function serviceKey(secretKeysJson?: string, legacyServiceRoleKey?: string): string {
+  if (secretKeysJson) {
+    try {
+      const keys = JSON.parse(secretKeysJson) as Record<string, unknown>
+      const key = keys.default ?? Object.values(keys)[0]
+      if (typeof key === "string" && key) return key
+    } catch {
+      // Not JSON: fall back to the legacy key.
+    }
   }
+  return legacyServiceRoleKey ?? ""
 }
 
 // Expo accepts up to 100 messages per request.
