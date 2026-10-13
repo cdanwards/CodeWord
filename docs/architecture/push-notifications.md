@@ -8,8 +8,9 @@ Game events reach agents as pushes, even with the app closed. The design and its
 engine function or cron tick
   -> row change on user_games / games / agent_words / eliminations / game_results
   -> trigger writes notifications row (skips the agent who caused it)
-  -> statement trigger: pg_net POST {functions_url}/send-push   (sent after commit)
-  -> send-push: claim_push_batch -> Expo push API -> mark sent, drop dead tokens
+  -> statement trigger: pg_net POST {functions_url}/send-push   (sent after commit,
+       with the dispatch secret in an x-codeword-dispatch header)
+  -> send-push: check_dispatch_secret, then claim_push_batch -> Expo push API -> mark sent, drop dead tokens
   -> device shows the banner; tapping it opens /game/<gameId>
 ```
 
@@ -22,7 +23,8 @@ The once-a-minute `codeword-tick` cron job runs `_tick()`: it calls `_sync_game`
 | Outbox and tokens | `notifications`, `push_tokens` (migration 009) | Agents can read their own notifications. Nobody reads `push_tokens` directly. |
 | Triggers | `_notify_on_join`, `_notify_on_start`, `_notify_on_word`, `_notify_on_report`, `_notify_on_verdict`, `_notify_on_result` | Message text lives here. `_notify` skips `auth.uid()`. |
 | Client RPCs | `register_push_token(token, platform)`, `unregister_push_token(token)` | Wrapped as `db.registerPushToken` / `db.unregisterPushToken`. |
-| Delivery | `supabase/functions/send-push/index.ts` | Accepts only callers whose verified JWT has the `service_role` role. Ticket handling is in `messages.ts` (tested by `test/send-push.test.ts`). |
+| Caller auth | `codeword_dispatch_secret` in Vault (migration 010), `check_dispatch_secret` | A random secret generated inside the database. Nobody copies it; `send-push` asks the database whether the header matches. |
+| Delivery | `supabase/functions/send-push/index.ts` | Accepts only callers with the dispatch secret; JWT verification is off (`verify_jwt = false`). Ticket handling is in `messages.ts` (tested by `test/send-push.test.ts`). |
 | App | `src/lib/notifications.ts` | Permission, token registration, tap handling, refresh on push. |
 
 ## In the app
@@ -37,7 +39,7 @@ Push payload `data`: `{ notificationId, gameId, kind }`. `kind` is one of `agent
 
 ## Local development
 
-`supabase/seed.sql` stores the two Vault secrets for the local stack (`http://kong:8000/functions/v1` and the fixed local service role key), so `supabase db reset` wires delivery up.
+`supabase/seed.sql` stores the functions URL for the local stack (`http://kong:8000/functions/v1`) in Vault, and migration 010 generates the dispatch secret, so `supabase db reset` wires delivery up.
 
 `supabase start` serves `supabase/functions/` and loads `supabase/functions/.env`. Copy the example:
 
@@ -75,21 +77,30 @@ Expo puts `data` under the `body` key of the APNs payload, which is why the stan
 ## Hosted project
 
 ```bash
-supabase functions deploy send-push
+supabase db push --linked                 # migration 010 creates the dispatch secret
+supabase functions deploy send-push --project-ref <ref> --no-verify-jwt
 ```
 
-Then, in the SQL editor:
+Then, once, in the SQL editor:
 
 ```sql
 SELECT vault.create_secret('https://<ref>.supabase.co/functions/v1', 'codeword_functions_url');
-SELECT vault.create_secret('<service role key>', 'codeword_service_role_key');
 ```
 
-Use the legacy `service_role` key (Project Settings > API Keys > "Legacy anon, service_role API keys", a JWT starting with `eyJ`), not an `sb_secret_` key. `send-push` accepts any caller whose verified JWT has `role: service_role`; the platform checks the signature first because `verify_jwt` is pinned on in `config.toml`. It can't compare against its own `SUPABASE_SERVICE_ROLE_KEY`, which on hosted projects may be a new-format key. If the project ever disables JWT-based API keys, `send-push` and the Vault secret need to move to the new secret keys.
+No API key goes into Vault or into the function's settings. The function reaches the database with the key Supabase injects: `SUPABASE_SECRET_KEYS` (new `sb_secret_` keys) when present, otherwise `SUPABASE_SERVICE_ROLE_KEY`. The app uses the publishable key (`sb_publishable_`) as `SUPABASE_ANON_KEY` in `.env`; the legacy JWT-based API keys are disabled on the CodeWord project.
 
 Set `EXPO_ACCESS_TOKEN` with `supabase secrets set` only if enhanced push security is on for the Expo project.
 
-To check the database can reach the function, run `select public._dispatch_push();` in the SQL editor, then `select status_code, content::text from net._http_response order by id desc limit 1;`. Expect `200` and `{"processed":0,"sent":0}`.
+To check the database can reach the function, run `select public._dispatch_push();` in the SQL editor, then `select status_code, content::text from net._http_response order by id desc limit 1;`. Expect `200` and `{"processed":0,"sent":0}`. A `403` means the Vault entry `codeword_dispatch_secret` is missing or the function is an older deploy.
+
+### Moving a project off the legacy API keys
+
+Do this once per project, after migration 010 and the `--no-verify-jwt` deploy are live:
+
+1. Check the database still reaches `send-push`. In the [SQL editor](https://supabase.com/dashboard/project/peuvdwygnzjoexsqildc/sql/new), `select name from vault.secrets order by name;` should list only `codeword_dispatch_secret` and `codeword_functions_url`. Then run `select public._dispatch_push();`, wait a few seconds, and check that `select status_code, content::text from net._http_response order by id desc limit 1;` gives `200`.
+2. In [JWT Keys](https://supabase.com/dashboard/project/peuvdwygnzjoexsqildc/settings/jwt), click **Migrate JWT secret**, rotate to the new signing key, then revoke the legacy secret. Until it's revoked, a leaked legacy key still works as a bearer token. Revoking signs everyone out.
+3. In [API Keys](https://supabase.com/dashboard/project/peuvdwygnzjoexsqildc/settings/api-keys), on the legacy tab, click **Disable JWT-based API keys**.
+4. Point `.env` at the publishable key (`SUPABASE_ANON_KEY=sb_publishable_...`), then confirm the legacy keys get `401` and the publishable key still reads `games`.
 
 ## Debugging
 

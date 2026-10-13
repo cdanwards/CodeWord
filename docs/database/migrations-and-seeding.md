@@ -15,8 +15,9 @@ Applied in filename order by the Supabase CLI.
 | `007_timestamptz.sql` | Every timestamp column becomes `timestamptz` |
 | `008_lock_down_engine_tables.sql` | Removes direct client access to engine-owned tables; joining, leaving and editing games only in the lobby; game status and clocks engine-only |
 | `009_push_notifications.sql` | `push_tokens`, the `notifications` outbox and its triggers, delivery through pg_net to `send-push`, the once-a-minute `codeword-tick` cron job |
+| `010_dispatch_secret.sql` | Generates the Vault dispatch secret that authenticates the database to `send-push`, adds `check_dispatch_secret`, removes the service role key 009 kept in Vault |
 
-`supabase/seed.sql` runs after the migrations on `supabase db reset` (local only). It stores the Vault secrets that let the local database call the `send-push` function.
+`supabase/seed.sql` runs after the migrations on `supabase db reset` (local only). It stores the local functions URL in Vault so the local database can call `send-push`.
 
 ## Applying them locally
 
@@ -76,7 +77,7 @@ supabase db push --linked --dry-run                # what would be applied
 supabase db push --linked
 ```
 
-After changing `supabase/functions/send-push`, run `supabase functions deploy send-push --project-ref peuvdwygnzjoexsqildc`. Pushes also need the two Vault secrets ([push notifications](../architecture/push-notifications.md#hosted-project)). `seed.sql` is never pushed.
+After changing `supabase/functions/send-push`, run `supabase functions deploy send-push --project-ref peuvdwygnzjoexsqildc --no-verify-jwt`. Pushes also need the functions URL in Vault ([push notifications](../architecture/push-notifications.md#hosted-project)). `seed.sql` is never pushed.
 
 Free-tier projects pause after a week without traffic. If the API answers 521 and the CLI reports "tenant/user not found", restore the project from the dashboard and wait for the pooler to catch up.
 
