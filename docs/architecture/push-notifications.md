@@ -67,7 +67,7 @@ Expo puts `data` under the `body` key of the APNs payload, which is why the stan
 
 ## Real devices
 
-1. `eas init` to create the Expo project, and set `EAS_PROJECT_ID` in `.env.local` (read by `app.config.ts`).
+1. The Expo project is `@cdanwards/CodewordApp`; `eas init` stored its ID in `app.json` (`extra.eas.projectId`), and `app.config.ts` passes it through.
 2. Let EAS manage push credentials (`eas credentials`, or the first `eas build` for a device).
 3. Remove `EXPO_PUSH_URL` from `supabase/functions/.env` so the function talks to Expo.
 4. The phone must reach the backend, so this is easiest with a hosted project.

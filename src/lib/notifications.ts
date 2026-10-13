@@ -73,7 +73,7 @@ export async function registerForPush({ prompt }: { prompt: boolean }): Promise<
     if (status !== "granted") return status === "denied" ? "denied" : "undetermined"
 
     // Simulators can't get an Expo push token, and tokens need the EAS project ID
-    // (EAS_PROJECT_ID, see app.config.ts).
+    // (extra.eas.projectId in app.json, written by `eas init`).
     const id = projectId()
     if (!Device.isDevice || !id) return "unavailable"
 

@@ -1,6 +1,7 @@
 {
   "name": "CodewordApp",
   "slug": "CodewordApp",
+  "owner": "cdanwards",
   "scheme": "codewordapp",
   "version": "1.0.0",
   "orientation": "portrait",
@@ -69,6 +70,9 @@
   "extra": {
     "ignite": {
       "version": "11.0.0"
+    },
+    "eas": {
+      "projectId": "d47fbe77-3096-461f-9a60-2ccf3548f3ca"
     }
   }
 }
