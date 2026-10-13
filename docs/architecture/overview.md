@@ -67,6 +67,6 @@ docs/                   This documentation
 ## Not built yet
 
 - Realtime updates instead of polling
-- A hosted Supabase project and release builds (EAS profiles exist in `eas.json`). Pushes are built but need an EAS project ID and a physical device to arrive for real; see [push notifications](push-notifications.md).
+- Release builds (EAS profiles exist in `eas.json`; the EAS project is `@cdanwards/CodewordApp`). The hosted Supabase project is set up, so pushes need only a device build to arrive for real; see [push notifications](push-notifications.md).
 - Profile editing and settings screens (buttons exist, screens don't)
 - Android has not been run since the revival

@@ -22,7 +22,7 @@ The once-a-minute `codeword-tick` cron job runs `_tick()`: it calls `_sync_game`
 | Outbox and tokens | `notifications`, `push_tokens` (migration 009) | Agents can read their own notifications. Nobody reads `push_tokens` directly. |
 | Triggers | `_notify_on_join`, `_notify_on_start`, `_notify_on_word`, `_notify_on_report`, `_notify_on_verdict`, `_notify_on_result` | Message text lives here. `_notify` skips `auth.uid()`. |
 | Client RPCs | `register_push_token(token, platform)`, `unregister_push_token(token)` | Wrapped as `db.registerPushToken` / `db.unregisterPushToken`. |
-| Delivery | `supabase/functions/send-push/index.ts` | Accepts only the service role key. Ticket handling is in `messages.ts` (tested by `test/send-push.test.ts`). |
+| Delivery | `supabase/functions/send-push/index.ts` | Accepts only callers whose verified JWT has the `service_role` role. Ticket handling is in `messages.ts` (tested by `test/send-push.test.ts`). |
 | App | `src/lib/notifications.ts` | Permission, token registration, tap handling, refresh on push. |
 
 ## In the app
@@ -85,7 +85,11 @@ SELECT vault.create_secret('https://<ref>.supabase.co/functions/v1', 'codeword_f
 SELECT vault.create_secret('<service role key>', 'codeword_service_role_key');
 ```
 
+Use the legacy `service_role` key (Project Settings > API Keys > "Legacy anon, service_role API keys", a JWT starting with `eyJ`), not an `sb_secret_` key. `send-push` accepts any caller whose verified JWT has `role: service_role`; the platform checks the signature first because `verify_jwt` is pinned on in `config.toml`. It can't compare against its own `SUPABASE_SERVICE_ROLE_KEY`, which on hosted projects may be a new-format key. If the project ever disables JWT-based API keys, `send-push` and the Vault secret need to move to the new secret keys.
+
 Set `EXPO_ACCESS_TOKEN` with `supabase secrets set` only if enhanced push security is on for the Expo project.
+
+To check the database can reach the function, run `select public._dispatch_push();` in the SQL editor, then `select status_code, content::text from net._http_response order by id desc limit 1;`. Expect `200` and `{"processed":0,"sent":0}`.
 
 ## Debugging
 

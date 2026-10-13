@@ -65,4 +65,19 @@ Sign in as Alice in the app and start the operation, then drive the others from 
 
 ## Deploying
 
-There is no hosted project yet (the original one was deleted while the project sat idle). To create one: make a Supabase project, `supabase link --project-ref <ref>`, `supabase db push --linked`, then put its URL and anon key in `.env`. For pushes, also deploy `send-push` and set its two Vault secrets ([push notifications](../architecture/push-notifications.md#hosted-project)). Don't point `scripts/simulate-game.mjs` at it; the script refuses non-local URLs on purpose.
+The hosted project is `peuvdwygnzjoexsqildc` ("CodeWord", us-east-2). It was paused while the project sat idle and restored on 2026-10-13, when migrations 004 to 009 were pushed and `send-push` deployed. `.env` holds its URL and anon key, so builds without `.env.local` (EAS builds) use it.
+
+To ship a new migration:
+
+```bash
+supabase link --project-ref peuvdwygnzjoexsqildc   # once per checkout
+supabase migration list --linked                   # what's applied where
+supabase db push --linked --dry-run                # what would be applied
+supabase db push --linked
+```
+
+After changing `supabase/functions/send-push`, run `supabase functions deploy send-push --project-ref peuvdwygnzjoexsqildc`. Pushes also need the two Vault secrets ([push notifications](../architecture/push-notifications.md#hosted-project)). `seed.sql` is never pushed.
+
+Free-tier projects pause after a week without traffic. If the API answers 521 and the CLI reports "tenant/user not found", restore the project from the dashboard and wait for the pooler to catch up.
+
+Don't point `scripts/simulate-game.mjs` or `scripts/push-check.mjs` at the hosted project; both refuse non-local URLs on purpose.
