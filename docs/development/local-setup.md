@@ -27,6 +27,8 @@ supabase start
 
 The first run downloads images and applies every migration. It prints the API URL and keys; get them again any time with `supabase status`.
 
+For push notifications, copy `supabase/functions/.env.example` to `supabase/functions/.env` before starting (or restart the stack after). It sends pushes to the stand-in in `scripts/push-check.mjs` instead of Expo. See [push notifications](../architecture/push-notifications.md).
+
 ## 3. Point the app at it
 
 Create `.env.local` (gitignored; Expo loads it ahead of `.env`):
@@ -37,7 +39,7 @@ SUPABASE_ANON_KEY=<the "anon key" from supabase status>
 NETWORK_CHECKS_ENABLED=0
 ```
 
-On an Android emulator use `http://10.0.2.2:54321`.
+On an Android emulator use `http://10.0.2.2:54321`. To get real push tokens on a device, also set `EAS_PROJECT_ID` (from `eas init`).
 
 ## 4. Build the dev client (once, and after native changes)
 
@@ -65,7 +67,7 @@ Use a test agent, `alice@codeword.test` / `codeword-dev-1` (any `scripts/agent.m
 
 | Symptom | Cause and fix |
 |---|---|
-| Build fails in `fmt/format.cc` with "call to consteval function … is not a constant expression" | Xcode 26 vs React Native 0.79's `fmt`. `plugins/withFmtXcode26Fix.ts` compiles that pod as C++17; make sure prebuild ran so the Podfile has the patch. Remove the plugin after upgrading Expo (spec 08). |
+| Build fails in `fmt/format.cc` with "call to consteval function ... is not a constant expression" | Xcode 26 vs React Native 0.79's `fmt`. `plugins/withFmtXcode26Fix.ts` compiles that pod as C++17; make sure prebuild ran so the Podfile has the patch. Remove the plugin after upgrading Expo (spec 08). |
 | `pod install` fails with "Unicode Normalization not appropriate for ASCII-8BIT" | Run it with `LANG=en_US.UTF-8`. |
 | App shows signed in but every request fails, "violates foreign key constraint user_profiles_user_id_fkey" | Your stored session belongs to a user that no longer exists (e.g. after `supabase db reset`). Sign out and back in. |
 | Games list is empty on the simulator | `NETWORK_CHECKS_ENABLED` must be `0` locally; with checks on, a failed connectivity probe makes reads use an empty fallback. |

@@ -43,7 +43,7 @@ Used for things the client is allowed to do itself:
 
 `src/app/(app)/game/[id].tsx` owns loading for one operation:
 
-1. On focus it calls `getMission` and `getBoard` together, then again every 8 seconds until the screen loses focus. That's how another agent's actions (a report against you, a new target) arrive.
+1. On focus it calls `getMission` and `getBoard` together, then again every 8 seconds until the screen loses focus. That's how another agent's actions (a report against you, a new target) arrive. A push about this game triggers a refresh straight away ([push notifications](push-notifications.md)).
 2. It picks exactly one view:
 
 | Condition, checked in order | View |
@@ -60,6 +60,6 @@ Secrets in the UI: `MissionView` keeps your codewords redacted until you press a
 
 ## Other screens
 
-- **HQ** reloads your games whenever it comes into focus, features the live operation (else the newest lobby), and calls `getMission` for it to show your target's name.
-- **Case files** filters `getUserGames` locally by status.
-- **Join / Create** are bottom sheets; their inputs use `SheetTextInput` so the sheet moves with the keyboard.
+- HQ reloads your games whenever it comes into focus, features the live operation (else the newest lobby), and calls `getMission` for it to show your target's name.
+- Case files filters `getUserGames` locally by status.
+- Join and Create are bottom sheets; their inputs use `SheetTextInput` so the sheet moves with the keyboard.

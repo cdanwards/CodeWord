@@ -14,6 +14,9 @@ Applied in filename order by the Supabase CLI.
 | `006_word_bank.sql` | Seeds about 150 codewords per difficulty tier |
 | `007_timestamptz.sql` | Every timestamp column becomes `timestamptz` |
 | `008_lock_down_engine_tables.sql` | Removes direct client access to engine-owned tables; joining, leaving and editing games only in the lobby; game status and clocks engine-only |
+| `009_push_notifications.sql` | `push_tokens`, the `notifications` outbox and its triggers, delivery through pg_net to `send-push`, the once-a-minute `codeword-tick` cron job |
+
+`supabase/seed.sql` runs after the migrations on `supabase db reset` (local only). It stores the Vault secrets that let the local database call the `send-push` function.
 
 ## Applying them locally
 
@@ -32,7 +35,7 @@ After a reset, if auth calls return 502 ("An invalid response was received from 
 3. If you change a table, update `supabase/schema.ts`. If you change an engine function's JSON, update `Mission` / `Board` in `supabase/schema.ts`.
 4. If you add a table, enable RLS and decide its policies explicitly; update [schema and RLS](schema-and-rls.md).
 5. Apply it with `supabase migration up --local`, then prove the chain still builds from scratch with `supabase db reset --local`.
-6. Run `node scripts/simulate-game.mjs` (it must print all checks passed) and add a check for any new rule or permission.
+6. Run `node scripts/simulate-game.mjs` (it must print all checks passed) and add a check for any new rule or permission. If the change affects notifications, also run `node scripts/push-check.mjs`.
 
 Inspect the database directly with:
 
@@ -44,7 +47,7 @@ Supabase Studio is at http://127.0.0.1:54323.
 
 ## Test data
 
-There is no `seed.sql`; test accounts are made through the real auth API so they behave like users.
+`seed.sql` holds configuration only; test accounts are made through the real auth API so they behave like users.
 
 - **Fixed test agents:** `alice`, `bob`, `priya`, `dev` (`<name>@codeword.test`, password `codeword-dev-1`). `scripts/agent.mjs` creates each on first use.
 - **A ready lobby:**
@@ -62,4 +65,4 @@ Sign in as Alice in the app and start the operation, then drive the others from 
 
 ## Deploying
 
-There is no hosted project yet (the original one was deleted while the project sat idle). To create one: make a Supabase project, `supabase link --project-ref <ref>`, `supabase db push --linked`, then put its URL and anon key in `.env`. Don't point `scripts/simulate-game.mjs` at it; the script refuses non-local URLs on purpose.
+There is no hosted project yet (the original one was deleted while the project sat idle). To create one: make a Supabase project, `supabase link --project-ref <ref>`, `supabase db push --linked`, then put its URL and anon key in `.env`. For pushes, also deploy `send-push` and set its two Vault secrets ([push notifications](../architecture/push-notifications.md#hosted-project)). Don't point `scripts/simulate-game.mjs` at it; the script refuses non-local URLs on purpose.

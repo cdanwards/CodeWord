@@ -24,9 +24,9 @@ db helpers            (src/lib/database.ts)  ── case conversion, error handl
 Supabase              tables under RLS  +  engine functions (SECURITY DEFINER)
 ```
 
-- **Screens never call Supabase directly.** All table and function access goes through `db` in `src/lib/database.ts`, which converts snake_case columns to camelCase and back (see [client data flow](client-data-flow.md)).
-- **Game rules run in the database.** Starting, reporting, confirming and ending happen in Postgres functions; the client only displays results and calls them. See [ADR 0002](../adr/0002-server-side-game-engine.md).
-- **Auth** is Supabase Auth with the session kept on the device. See [auth and session lifecycle](auth-and-session-lifecycle.md).
+- Screens never call Supabase directly. All table and function access goes through `db` in `src/lib/database.ts`, which converts snake_case columns to camelCase and back (see [client data flow](client-data-flow.md)).
+- Game rules run in the database. Starting, reporting, confirming and ending happen in Postgres functions; the client only displays results and calls them. See [ADR 0002](../adr/0002-server-side-game-engine.md).
+- Auth is Supabase Auth with the session kept on the device. See [auth and session lifecycle](auth-and-session-lifecycle.md).
 
 ## Folders
 
@@ -64,10 +64,9 @@ docs/                   This documentation
 
 `(app)/_layout` redirects to login when signed out. Stack headers are hidden; each screen draws its own `TopBar`.
 
-## What isn't built yet
+## Not built yet
 
-- Push notifications (a report against you only appears when your app polls)
 - Realtime updates instead of polling
-- A hosted Supabase project and release builds (EAS profiles exist in `eas.json`)
+- A hosted Supabase project and release builds (EAS profiles exist in `eas.json`). Pushes are built but need an EAS project ID and a physical device to arrive for real; see [push notifications](push-notifications.md).
 - Profile editing and settings screens (buttons exist, screens don't)
 - Android has not been run since the revival
